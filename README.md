@@ -6,7 +6,7 @@ A browser lab where you build a building, hide how its world behaves, and watch 
 
 ## What you can do
 
-1. **Describe the building.** Choose the top floor, the elevators (start floor, the floors each one reaches, weight capacity) and the people (start floor, destination, weight). The controller sees all of this. Or start from one of 36 ready-made problems.
+1. **Describe the building.** Choose the top floor, the elevators (start floor, the floors each one reaches, weight capacity) and the people (start floor, destination, weight). The controller sees all of this. Or start from one of 35 ready-made problems.
 2. **Hide the world.** Set each elevator's chance of a successful move, each person's chance of boarding or exiting, and the list of rewards each delivery can pay. The controller never sees these numbers.
 3. **Run it.** The controller starts knowing nothing about the hidden world. You watch it move elevators and board people, and the side panel shows:
    - the action it chose and whether it worked

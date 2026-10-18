@@ -62,10 +62,10 @@ body {
 button, select, input { font: inherit; color: inherit; }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
 
-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px 24px; }
+header { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
 h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-height: 0.9; margin: 0; }
-.tagline { margin: 6px 0 0; color: var(--muted); max-width: 66ch; }
-.steps { display: flex; gap: 6px; align-items: center; font-size: 0.85rem; }
+.tagline { margin: 6px auto 0; color: var(--muted); max-width: 66ch; text-wrap: pretty; }
+.steps { display: flex; gap: 6px; align-items: center; justify-content: center; font-size: 0.85rem; }
 .steps span { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
 .steps span.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
@@ -188,7 +188,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
       <h1>Elevator Dispatch Lab</h1>
       <p class="tagline">Define a building and a world, then the controller tries to deliver the people in it. The controller can't see the success rates or the rewards: it learns them while it runs (reinforcement learning) and plans based on what it has learned.<br>This is the algorithm from the file I created, translated to JavaScript. The translation was checked against the Python code and picks exactly the same actions.</p>
     </div>
-    <div class="steps"><span id="stepEdit" class="on">1 · Input</span><span id="stepRun">2 · Controller running</span></div>
+    <div class="steps"><span id="stepEdit" class="on">1 · Input</span><span id="stepRun">2 · Output</span></div>
   </header>
 
   <div class="main">
@@ -305,7 +305,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 <script id="core">__CORE__</script>
 <script>
 (function () {
-  const PRESETS = __PROBLEMS__;
+  const PRESETS = __PROBLEMS__.filter(P => P.name !== 'rl_hard');
   const AIFINAL = __AIFINAL__;
   const ECOL = ['var(--e0)', 'var(--e1)', 'var(--e2)', 'var(--e3)'];
   const PCOL = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)', 'var(--p5)'];
