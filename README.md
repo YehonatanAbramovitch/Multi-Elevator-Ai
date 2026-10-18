@@ -13,12 +13,13 @@ A browser lab where you build a building, hide how its world behaves, and watch 
    - its current strategy and the next steps of its A* plan
    - its estimate of every hidden number next to the true value, converging as it gathers data
    - cumulative reward against a random policy on the same world and seed
+   - a learning chart: how far its estimates are from the true values, step by step
 4. **Compare.** One click averages 10 runs of the controller against the random policy.
 
 ### Two ways a run can end
 
 - **When everyone has arrived** (the default). The run stops as soon as every person reaches their floor, and the lab reports how many steps it took. In this mode the controller always uses the `full` strategy and never resets, since a single round leaves no room for the `loop` strategy to pay off. Everything else is unchanged. On all 36 problems × 10 seeds it finished every run, in at most 50 steps ([`verify/single_round_check.js`](verify/single_round_check.js)). The random policy usually doesn't finish at all.
-- **As in the assignment.** After everyone arrives the building resets and the controller keeps collecting reward until the step budget runs out, `loop` strategy included. This is the algorithm exactly as written.
+- **When the steps run out.** After everyone arrives the building resets and the controller keeps collecting reward until the step budget runs out, `loop` strategy included. This is the algorithm exactly as written.
 
 ## The domain
 
@@ -34,13 +35,7 @@ The algorithm is in [`algorithm/controller.py`](algorithm/controller.py). It com
 - **Optimism for exploration.** A person it hasn't delivered yet is assumed to be worth `max(bonus, 1)`, so unexplored deliveries look attractive until real samples replace the guess.
 - **Planning on what it has learned.** A weighted A* search (W=3) finds the plan with the lowest expected cost, where an action that succeeds with probability *p* costs `1/p` steps. The heuristic counts each person's remaining board/exit costs plus the single largest elevator move still needed. Successors are pruned to moves that pick someone up, drop someone at their destination, or drop them at a floor where another elevator can carry them on.
 - **Replanning.** It follows the current plan while reality matches what the plan expected. It replans when something fails, when the plan runs out, and every 8 steps so newer estimates get used. After a search that gives up, it waits a few steps before searching again.
-- **Choosing a strategy** (assignment mode). It compares the reward per step of delivering everyone (`full`) with repeatedly delivering only the single most profitable person and resetting (`loop`), and switches between them as its estimates change.
-
-### A bug fix that matters
-
-When the last person in a round is delivered, the building resets immediately, so that person reappears on their starting floor instead of disappearing. The original version only recognized a delivery when the person disappeared, so it never learned the reward of whoever was delivered last. Their estimate stayed stuck at the optimistic guess and sometimes led it into a bad `loop`. The fix recognizes a delivery from the reward itself (delivery rewards are always positive).
-
-Across 36 problems × 30 seeds: 24 problems improved, none got worse, and total reward rose by 5.6%. The largest gain was +70% on `e5_hard` (509 → 867).
+- **Choosing a strategy** (when the steps run out). It compares the reward per step of delivering everyone (`full`) with repeatedly delivering only the single most profitable person and resetting (`loop`), and switches between them as its estimates change.
 
 ## Running Python in the browser: the port
 
@@ -50,35 +45,6 @@ The lab runs a JavaScript port of the Python controller, [`src/core.js`](src/cor
 - **Same tie-breaking.** The Python code iterates over `frozenset`s of floors, whose order depends on CPython's hash table (for example `{2,4,6,8}` iterates as `8,2,4,6`). `pySetOrder` in `core.js` reproduces that order. It matches CPython on every set from the 36 problems and on 3,000 random sets ([`verify/pyset_check.js`](verify/pyset_check.js)).
 
 The simulation runs in a Web Worker, so the animation stays smooth during long A* searches.
-
-## Running locally
-
-Open `index.html` in a browser. It is a single self-contained file.
-
-To rebuild it after editing `src/`:
-
-```bash
-python src/build.py
-```
-
-To rerun the verification, you need the original course environment (`ext_elev.py` and `ex3_check.py`), which isn't included here:
-
-```bash
-python verify/py_trace.py <course-ex3-folder> algorithm/controller.py py_trace.json 2
-node verify/compare.js py_trace.json
-```
-
-## Project layout
-
-```
-index.html            the lab (built, self-contained)
-algorithm/controller.py   the reinforcement-learning controller (Python)
-src/core.js           JavaScript port of the controller + environment rules
-src/lab_template.html the lab's UI
-src/build.py          builds index.html
-data/                 the 36 problems and the Python benchmark averages
-verify/               scripts that check the port against Python
-```
 
 ## Background
 

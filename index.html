@@ -162,6 +162,12 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .sw { width: 14px; height: 8px; border-radius: 3px; background: var(--led); display: inline-block; }
 
 .chart svg { width: 100%; height: auto; display: block; direction: ltr; cursor: crosshair; }
+.minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 560px) { .minis { grid-template-columns: minmax(0, 1fr); } }
+.mini { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mini .mh { min-height: 2.6em; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; font-size: 0.78rem; color: var(--muted); }
+.mini .mv { font-family: var(--font-led); font-size: 1.05rem; color: var(--ink); white-space: nowrap; }
+.mini svg { width: 100%; height: auto; display: block; cursor: crosshair; }
 .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; max-height: 190px; overflow: auto; }
 .log li { display: flex; gap: 8px; align-items: baseline; }
 .log .t { font-family: var(--font-led); color: var(--muted); font-size: 0.75rem; min-width: 34px; }
@@ -288,6 +294,11 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         <h3>Cumulative reward · click to jump to a step</h3>
         <svg id="chart" viewBox="0 0 640 190" aria-label="Cumulative reward chart"></svg>
         <div class="legend"><span><i class="sw"></i>Your controller</span><span><i class="sw" style="background:var(--muted)"></i>Random policy</span><span><i class="sw" style="background:var(--amber-soft)"></i>Loop periods</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>Full round</span></div>
+      </div>
+      <div class="card" id="learnCard" hidden>
+        <h3>Learning over time · how far the estimates are from the truth</h3>
+        <div class="minis" id="minis"></div>
+        <p class="muted" style="margin:8px 0 0">Each line is the average gap between the controller's estimate and the hidden true value. It starts large because the controller begins with guesses (50% success, an optimistic reward), and it shrinks as experience comes in. A flat line means nothing new was observed for that kind of value.</p>
       </div>
       <div class="card" id="logCard" hidden>
         <h3>Log</h3>
@@ -1182,7 +1193,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
   function setMode(m) {
     mode = m;
     $('editor').hidden = m !== 'edit'; $('mind').hidden = m !== 'run';
-    $('controls').hidden = $('chartCard').hidden = $('logCard').hidden = m !== 'run';
+    $('controls').hidden = $('chartCard').hidden = $('learnCard').hidden = $('logCard').hidden = m !== 'run';
     $('editNote').hidden = m !== 'edit';
     $('stepEdit').classList.toggle('on', m === 'edit'); $('stepRun').classList.toggle('on', m === 'run');
   }
@@ -1390,6 +1401,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     mk('path', { d: path('rR'), style: 'fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3' }, svg);
     mk('path', { d: path('R'), style: 'fill:none;stroke:var(--led);stroke-width:2.2' }, svg);
     cx = { line: mk('line', { y1: T, y2: B, style: 'stroke:var(--ink);stroke-width:1.2' }, svg), X, L, R, H };
+    drawLearning(H);
     moveCursor(k);
     svg.onclick = ev => {
       const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
@@ -1398,7 +1410,60 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
       stop(); show(Math.max(0, Math.min(run.steps.length - 1, i)));
     };
   }
-  function moveCursor(i) { if (cx) { cx.line.setAttribute('x1', cx.X(i)); cx.line.setAttribute('x2', cx.X(i)); } }
+  function moveCursor(i) {
+    if (cx) { cx.line.setAttribute('x1', cx.X(i)); cx.line.setAttribute('x2', cx.X(i)); }
+    for (const m of minis) {
+      m.cur.setAttribute('x1', m.X(i)); m.cur.setAttribute('x2', m.X(i));
+      const v = m.vals[Math.min(i, m.vals.length - 1)];
+      if (v != null) { m.dot.setAttribute('cx', m.X(i)); m.dot.setAttribute('cy', m.Y(v)); m.out.textContent = Math.round(v) + m.unit; }
+    }
+  }
+
+  // ---------- learning chart: average |estimate - truth| per kind of hidden value ----------
+  let minis = [];
+  function learningSeries() {
+    const c = run.cfg, eids = eidsOf(c), pids = pidsOf(c);
+    const mean = a => a.reduce((x, y) => x + y, 0) / a.length;
+    const trueRw = {}; pids.forEach(p => { trueRw[p] = mean(c.P[p].rw); });
+    return [
+      { name: 'Elevator move success', unit: ' pts', col: 'var(--e0)',
+        f: b => mean(eids.map(e => Math.abs(b.ep[e] - c.E[e].p) * 100)) },
+      { name: 'Board/exit success', unit: ' pts', col: 'var(--p1)',
+        f: b => mean(pids.map(p => Math.abs(b.pp[p] - c.P[p].p) * 100)) },
+      { name: 'Delivery reward', unit: '%', col: 'var(--led)',
+        f: b => mean(pids.map(p => Math.abs(b.rw[p] - trueRw[p]) / trueRw[p] * 100)) },
+    ];
+  }
+  function drawLearning(H) {
+    const box = $('minis'); box.innerHTML = ''; minis = [];
+    if (!run || !run.steps.length) return;
+    const W = 220, Ht = 110, L = 30, R = 212, T = 8, B = 92;
+    for (const s of learningSeries()) {
+      const vals = run.steps.map(st => s.f(st.b));
+      const top = Math.max(5, ...vals), ns = niceStep(top / 2), yMax = Math.ceil(top / ns) * ns;
+      const X = i => L + (R - L) * i / Math.max(1, H - 1), Y = v => B - (B - T) * v / yMax;
+      const wrap = document.createElement('div'); wrap.className = 'mini';
+      wrap.innerHTML = `<div class="mh"><span>${s.name}</span><span class="mv"></span></div>`;
+      const svg = mk('svg', { viewBox: `0 0 ${W} ${Ht}`, role: 'img', 'aria-label': `${s.name}: estimation error over time` });
+      wrap.appendChild(svg); box.appendChild(wrap);
+      for (const v of [0, yMax / 2, yMax]) {
+        mk('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), style: 'stroke:var(--line);stroke-width:1' }, svg);
+        const tx = mk('text', { x: L - 4, y: Y(v) + 3.5, 'text-anchor': 'end', style: 'fill:var(--muted);font:9.5px var(--font-led)' }, svg); tx.textContent = Math.round(v);
+      }
+      for (const i of [0, H]) { const tx = mk('text', { x: X(Math.min(i, H - 1)), y: Ht - 4, 'text-anchor': i ? 'end' : 'start', style: 'fill:var(--muted);font:9.5px var(--font-led)' }, svg); tx.textContent = i; }
+      const d = vals.map((v, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1)).join('');
+      mk('path', { d: d + `L${X(vals.length - 1).toFixed(1)},${B}L${X(0)},${B}Z`, style: `fill:${s.col};opacity:.12` }, svg);
+      mk('path', { d, style: `fill:none;stroke:${s.col};stroke-width:2` }, svg);
+      const cur = mk('line', { y1: T, y2: B, style: 'stroke:var(--ink);stroke-width:1' }, svg);
+      const dot = mk('circle', { r: 3.5, style: `fill:${s.col};stroke:var(--surface);stroke-width:1.5` }, svg);
+      svg.addEventListener('click', ev => {
+        const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+        const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+        stop(); show(Math.max(0, Math.min(run.steps.length - 1, Math.round((loc.x - L) / (R - L) * (H - 1)))));
+      });
+      minis.push({ vals, X, Y, cur, dot, out: wrap.querySelector('.mv'), unit: s.unit });
+    }
+  }
   function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
 
   function renderLog(i) {
