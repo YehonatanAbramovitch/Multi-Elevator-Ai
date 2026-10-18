@@ -70,7 +70,10 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .steps span.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 
 .main { display: grid; grid-template-columns: minmax(330px, 0.95fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
-@media (max-width: 940px) { .main { grid-template-columns: minmax(0, 1fr); } .col.stage { order: -1; } }
+.wrap.wide { max-width: 1680px; }
+.main.run { grid-template-columns: minmax(270px, 0.8fr) minmax(0, 1.15fr) minmax(300px, 1fr); }
+@media (max-width: 1250px) { .main.run { grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr); } .main.run .insights { grid-column: 1 / -1; } }
+@media (max-width: 940px) { .main, .main.run { grid-template-columns: minmax(0, 1fr); } .col.stage { order: -1; } .main.run .insights { grid-column: auto; } }
 .col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
 .card h3 { margin: 0 0 10px; font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -155,13 +158,12 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .sw { width: 14px; height: 8px; border-radius: 3px; background: var(--led); display: inline-block; }
 
 .chart svg { width: 100%; height: auto; display: block; direction: ltr; cursor: crosshair; }
-.minis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 560px) { .minis { grid-template-columns: minmax(0, 1fr); } }
+.minis { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .mini { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.mini .mh { min-height: 2.6em; display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; font-size: 0.78rem; color: var(--muted); }
+.mini .mh { display: flex; justify-content: space-between; align-items: baseline; gap: 6px; font-size: 0.78rem; color: var(--muted); }
 .mini .mv { font-family: var(--font-led); font-size: 1.05rem; color: var(--ink); white-space: nowrap; }
 .mini svg { width: 100%; height: auto; display: block; cursor: crosshair; }
-.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; max-height: 190px; overflow: auto; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; max-height: 140px; overflow: auto; }
 .log li { display: flex; gap: 8px; align-items: baseline; }
 .log .t { font-family: var(--font-led); color: var(--muted); font-size: 0.75rem; min-width: 34px; }
 .log .r { margin-inline-start: auto; }
@@ -186,9 +188,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   <header>
     <div>
       <h1>Elevator Dispatch Lab</h1>
-      <p class="tagline">Define a building and a world, then the controller tries to deliver the people in it. The controller can't see the success rates or the rewards: it learns them while it runs (reinforcement learning) and plans based on what it has learned.<br>This is the algorithm from the file I created, translated to JavaScript. The translation was checked against the Python code and picks exactly the same actions.</p>
+      <p class="tagline">Define a building and a world, then the controller tries to deliver the people in it. The controller can't see the success rates or the rewards: it learns them while it runs (reinforcement learning) and plans based on what it has learned.</p>
     </div>
-    <div class="steps"><span id="stepEdit" class="on">1 · Input</span><span id="stepRun">2 · Output</span></div>
+    <div class="steps"><span id="stepEdit" class="on">Input</span><span id="stepRun">Output</span></div>
   </header>
 
   <div class="main">
@@ -269,12 +271,6 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         <div><span class="k">Step</span><span class="v" id="hStep">0</span></div>
         <div><span class="k">Delivered · rounds</span><span class="v" id="hDel">0 · 0</span></div>
       </section>
-      <div class="scene" id="scene">
-        <svg id="svg" aria-label="Building cross-section"></svg>
-        <div class="banner" id="banner" style="opacity:0"></div>
-        <div class="edit-note" id="editNote">This is the building's starting state. Changes to the input show up here right away.</div>
-      </div>
-      <p class="muted" style="margin:0">Legend: the label <span style="font-family:var(--font-led)">2→7</span> is person 2, who needs to get to floor 7 · the number on the body is their weight · colored flags mark destination floors · each elevator shows load/capacity · a crossed-out shaft is a floor that elevator can't reach.</p>
       <div class="controls" id="controls" hidden>
         <button class="btn primary" id="play" type="button" style="min-width:80px">Pause</button>
         <button class="btn" id="prev" type="button">‹</button>
@@ -283,17 +279,26 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         <input type="range" id="scrub" min="0" max="0" value="0" dir="ltr" aria-label="Timeline">
         <span class="stepno" id="stepno"></span>
       </div>
-      <div class="card chart" id="chartCard" hidden>
+      <div class="scene" id="scene">
+        <svg id="svg" aria-label="Building cross-section"></svg>
+        <div class="banner" id="banner" style="opacity:0"></div>
+        <div class="edit-note" id="editNote">This is the building's starting state. Changes to the input show up here right away.</div>
+      </div>
+      <p class="muted" style="margin:0">Legend: the label <span style="font-family:var(--font-led)">2→7</span> is person 2, who needs to get to floor 7 · the number on the body is their weight · colored flags mark destination floors · each elevator shows load/capacity · a crossed-out shaft is a floor that elevator can't reach.</p>
+    </div>
+    <!-- run mode: charts and log, right of the building -->
+    <div class="col insights" id="insights" hidden>
+      <div class="card chart" id="chartCard">
         <h3>Cumulative reward · click to jump to a step</h3>
-        <svg id="chart" viewBox="0 0 640 190" aria-label="Cumulative reward chart"></svg>
+        <svg id="chart" viewBox="0 0 400 166" aria-label="Cumulative reward chart"></svg>
         <div class="legend"><span><i class="sw"></i>Your controller</span><span><i class="sw" style="background:var(--muted)"></i>Random policy</span><span><i class="sw" style="background:var(--amber-soft)"></i>Loop periods</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>Full round</span></div>
       </div>
-      <div class="card" id="learnCard" hidden>
+      <div class="card" id="learnCard">
         <h3>Learning over time · how far the estimates are from the truth</h3>
         <div class="minis" id="minis"></div>
-        <p class="muted" style="margin:8px 0 0">Each line is the average gap between the controller's estimate and the hidden true value. It starts large because the controller begins with guesses (50% success, an optimistic reward), and it shrinks as experience comes in. A flat line means nothing new was observed for that kind of value.</p>
+        <p class="muted" style="margin:6px 0 0">Average gap between the controller's estimate and the hidden true value. It starts large because the controller begins with guesses, and shrinks as experience comes in.</p>
       </div>
-      <div class="card" id="logCard" hidden>
+      <div class="card" id="logCard">
         <h3>Log</h3>
         <ul class="log" id="log"></ul>
       </div>
@@ -491,7 +496,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     sceneCfg = c;
     const svg = $('svg'); svg.innerHTML = '';
     const eids = eidsOf(c), pids = pidsOf(c);
-    const floors = c.height + 1, rowH = 62, top = 70, labelW = 40, lobbyW = 52 * Math.max(3, pids.length) + 34, shaftW = 92, gap = 14;
+    const floors = c.height + 1, rowH = 56, top = 66, labelW = 40, lobbyW = 52 * Math.max(3, pids.length) + 34, shaftW = 92, gap = 14;
     const W = labelW + lobbyW + gap + eids.length * (shaftW + gap) + 4, H = top + floors * rowH + 30;
     svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const yOf = f => top + (c.height - f) * rowH;
@@ -659,7 +664,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   function setMode(m) {
     mode = m;
     $('editor').hidden = m !== 'edit'; $('mind').hidden = m !== 'run';
-    $('controls').hidden = $('chartCard').hidden = $('learnCard').hidden = $('logCard').hidden = m !== 'run';
+    $('controls').hidden = $('insights').hidden = m !== 'run';
+    document.querySelector('.main').classList.toggle('run', m === 'run');
+    document.querySelector('.wrap').classList.toggle('wide', m === 'run');
     $('editNote').hidden = m !== 'edit';
     $('stepEdit').classList.toggle('on', m === 'edit'); $('stepRun').classList.toggle('on', m === 'run');
   }
@@ -846,7 +853,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     const svg = $('chart'), steps = run.steps, H = run.single ? Math.max(steps.length, 10) : run.cfg.horizon;
     svg.innerHTML = '';
     if (!steps.length) return;
-    const L = 46, R = 630, T = 12, B = 164;
+    const VW = Math.max(260, Math.round(svg.parentElement.clientWidth - 28)), L = 40, R = VW - 8, T = 10, B = 146;
+    svg.setAttribute('viewBox', `0 0 ${VW} 166`);
     const maxR = Math.max(1, ...steps.map(s => Math.max(s.R, s.rR)));
     const ns = niceStep(maxR / 4), yMax = Math.ceil(maxR / ns) * ns;
     const X = i => L + (R - L) * i / Math.max(1, H - 1), Y = v => B - (B - T) * v / yMax;
@@ -876,6 +884,11 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
       stop(); show(Math.max(0, Math.min(run.steps.length - 1, i)));
     };
   }
+  let lastInsightsW = 0;
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => {
+    const w = $('insights').clientWidth;
+    if (w && w !== lastInsightsW && run && mode === 'run' && run.steps.length) { lastInsightsW = w; drawChart(); }
+  }).observe($('insights'));
   function moveCursor(i) {
     if (cx) { cx.line.setAttribute('x1', cx.X(i)); cx.line.setAttribute('x2', cx.X(i)); }
     for (const m of minis) {
@@ -903,7 +916,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   function drawLearning(H) {
     const box = $('minis'); box.innerHTML = ''; minis = [];
     if (!run || !run.steps.length) return;
-    const W = 220, Ht = 110, L = 30, R = 212, T = 8, B = 92;
+    const W = Math.max(240, Math.round(box.clientWidth)), Ht = 68, L = 30, R = W - 8, T = 5, B = 53;
     for (const s of learningSeries()) {
       const vals = run.steps.map(st => s.f(st.b));
       const top = Math.max(5, ...vals), ns = niceStep(top / 2), yMax = Math.ceil(top / ns) * ns;
