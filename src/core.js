@@ -207,6 +207,10 @@ class Controller {
   constructor(game, opts = {}) {
     this.REPLAN_PERIOD = 8;
     this.ASTAR_TIME_BUDGET = opts.timeBudget != null ? opts.timeBudget : 1.0;
+    // Lab-only option: when the run ends after a single round, the RESET-loop
+    // strategy cannot pay off, so the strategy choice always picks 'full'.
+    // With singleRound false (the default) behaviour matches controller.py.
+    this.singleRound = !!opts.singleRound;
     this.now = opts.now || (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000);
 
     this.game = game;
@@ -371,6 +375,7 @@ class Controller {
   }
 
   _decide_strategy(ef, el, pl) {
+    if (this.singleRound) { this._strategy = 'full'; this._loop_pid = null; return; }
     const apr = {};
     for (const p of this.all_pids) apr[p] = this._reward_estimate(p);
     const full_cost = this._h(ef, pl);

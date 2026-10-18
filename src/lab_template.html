@@ -102,6 +102,10 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .prob { display: flex; align-items: center; gap: 8px; }
 .prob input[type=range] { flex: 1 1 120px; accent-color: var(--hidden); min-width: 0; }
 .prob output { font-family: var(--font-led); min-width: 40px; text-align: left; direction: ltr; }
+.seg { display: flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { flex: 1 1 140px; background: var(--bg); border: 0; padding: 7px 10px; cursor: pointer; font-size: 0.86rem; }
+.seg button + button { border-inline-start: 1px solid var(--line); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.84rem; }
 .issues li.err { color: var(--signal); }
 .issues li.warn { color: var(--muted); }
@@ -215,6 +219,10 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         </div>
 
         <div class="card">
+          <div class="field" style="margin-bottom:6px"><span>מתי הריצה נגמרת</span>
+            <div class="seg" id="modeSeg" role="group" aria-label="מתי הריצה נגמרת"><button type="button" data-m="single" aria-pressed="true">כשכולם הגיעו ליעד</button><button type="button" data-m="full" aria-pressed="false">כמו במטלה: כשנגמרים הצעדים</button></div>
+          </div>
+          <p class="muted" id="modeNote" style="margin:0 0 10px"></p>
           <ul class="issues" id="issues"></ul>
           <button class="btn primary run" id="runBtn" type="button" style="margin-top:10px">הריצו את הבקר</button>
         </div>
@@ -260,6 +268,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         <div class="banner" id="banner" style="opacity:0"></div>
         <div class="edit-note" id="editNote">כך נראה הבניין במצב ההתחלתי. שינויים בקלט מתעדכנים כאן מיד.</div>
       </div>
+      <p class="muted" style="margin:0">מקרא: התווית <span dir="ltr" style="font-family:var(--font-led)">11→7</span> היא אדם מספר 11 שצריך להגיע לקומה 7 · המספר על הגוף הוא המשקל שלו · הדגלים הצבעוניים מסמנים את קומות היעד · מעלית מציגה עומס/קיבולת · פיר מקווקו הוא קומה שהמעלית לא מגיעה אליה.</p>
       <div class="controls" id="controls" hidden>
         <button class="btn primary" id="play" type="button" style="min-width:80px">עצור</button>
         <button class="btn" id="prev" type="button">‹</button>
@@ -338,8 +347,8 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   function renderEditor() {
     $('fHeight').value = cfg.height; $('fHorizon').value = cfg.horizon; $('fGoal').value = cfg.goal; $('fSeed').value = cfg.seed;
     $('preset').value = cfg.name || '';
-    $('presetNote').textContent = cfg.name && AIFINAL[cfg.name] != null
-      ? `בבנצ'מרק בפייתון (30 הרצות) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : 'בניין שהגדרתם בעצמכם.';
+    $('presetNote').textContent = cfg.name && AIFINAL[cfg.name] != null && runMode === 'full'
+      ? `בבנצ'מרק בפייתון (30 הרצות, במצב של המטלה) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : (cfg.name ? `בעיה ${cfg.name} מתוך המטלה.` : 'בניין שהגדרתם בעצמכם.');
     const eids = eidsOf(cfg), pids = pidsOf(cfg);
     let h = '';
     eids.forEach((e, i) => {
@@ -579,8 +588,9 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     return acts[Math.floor(rng() * acts.length)];
   }
   const r2 = x => Math.round(x * 1000) / 1000;
-  function runOne(problem, seed, record, post) {
-    const g = new Engine(problem, seed), c = new Controller(g);
+  function runOne(problem, seed, record, post, single) {
+    const g = new Engine(problem, seed), c = new Controller(g, { singleRound: single });
+    let finishedAt = null, final = null, randDone = false, randFinishedAt = null;
     const gr = new Engine(problem, seed), rrng = mulberry32((seed ^ 0x5bd1e995) >>> 0);
     let buf = [], deliveries = 0, rounds = 0;
     for (let i = 0; i < g.maxSteps; i++) {
@@ -589,25 +599,37 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
       const strat = c._strategy, lp = c._loop_pid, replanned = c.lastReplanned;
       const b = record ? c.beliefs() : null, plan = record ? c.upcoming(5) : null;
       const o = g.submit(a);
-      gr.submit(randomAction(gr, rrng));
+      if (!randDone) { const ro = gr.submit(randomAction(gr, rrng)); if (single && ro && ro.goal) { randDone = true; randFinishedAt = gr.steps; } }
       if (o.delivered) deliveries++; if (o.goal) rounds++;
       if (record) {
         for (const k of ['ep', 'pp', 'rw']) for (const id in b[k]) b[k][id] = r2(b[k][id]);
         buf.push({ s: before, a, o, g: g.lastGained, R: g.reward, rR: gr.reward, st: strat, lp, rp: replanned, b, plan, d: deliveries, rd: rounds });
         if (buf.length >= 20) { post({ type: 'chunk', steps: buf }); buf = []; }
       }
+      if (single && o.goal) {
+        // the run ends here: show everyone delivered instead of the engine's reset
+        const pp = +a.slice(a.indexOf('{') + 1, a.indexOf(',')), ee = +a.slice(a.indexOf(',') + 1, a.indexOf('}'));
+        final = { e: before.e.map(x => x[0] === ee ? [ee, x[1], x[2] - g.pw[pp]] : x), p: [], rem: 0 };
+        finishedAt = i + 1; break;
+      }
     }
     if (record) post({ type: 'chunk', steps: buf });
-    return { total: g.reward, rand: gr.reward, final: g.state, deliveries, rounds };
+    const randAtFinish = gr.reward;
+    if (single) while (!randDone && gr.steps < gr.maxSteps) { const ro = gr.submit(randomAction(gr, rrng)); if (ro && ro.goal) { randDone = true; randFinishedAt = gr.steps; } }
+    return { total: g.reward, rand: single ? randAtFinish : gr.reward, final: final || g.state, deliveries, rounds, finishedAt, randFinishedAt };
   }
   onmessage = ev => {
     const m = ev.data;
     try {
-      if (m.cmd === 'run') { const r = runOne(m.problem, m.seed, true, x => postMessage(x)); postMessage({ type: 'done', final: r.final, total: r.total, rand: r.rand }); }
+      if (m.cmd === 'run') { const r = runOne(m.problem, m.seed, true, x => postMessage(x), m.single); postMessage({ type: 'done', final: r.final, total: r.total, rand: r.rand, finishedAt: r.finishedAt, randFinishedAt: r.randFinishedAt }); }
       else if (m.cmd === 'bench') {
-        let a = 0, b = 0; const n = 10;
-        for (let s = 0; s < n; s++) { const r = runOne(m.problem, m.seed + 1000 + s, false); a += r.total; b += r.rand; postMessage({ type: 'benchProgress', i: s + 1 }); }
-        postMessage({ type: 'bench', ai: a / n, rand: b / n });
+        let a = 0, b = 0, fin = 0, finSteps = 0, rfin = 0, rfinSteps = 0; const n = 10;
+        for (let s = 0; s < n; s++) {
+          const r = runOne(m.problem, m.seed + 1000 + s, false, null, m.single); a += r.total; b += r.rand;
+          if (r.finishedAt) { fin++; finSteps += r.finishedAt; } if (r.randFinishedAt) { rfin++; rfinSteps += r.randFinishedAt; }
+          postMessage({ type: 'benchProgress', i: s + 1 });
+        }
+        postMessage({ type: 'bench', ai: a / n, rand: b / n, single: m.single, fin, finAvg: fin ? finSteps / fin : 0, rfin, rfinAvg: rfin ? rfinSteps / rfin : 0 });
       }
     } catch (err) { postMessage({ type: 'error', msg: String(err && err.message || err) }); }
   };`;
@@ -635,13 +657,13 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   function startRun() {
     if (lastIssues.errs.length) return;
     const runCfg = JSON.parse(JSON.stringify(cfg));
-    run = { cfg: runCfg, problem: toProblem(runCfg), steps: [], done: false, final: null };
+    run = { cfg: runCfg, problem: toProblem(runCfg), steps: [], done: false, final: null, single: runMode === 'single' };
     setMode('run');
     $('benchOut').hidden = true; $('benchBtn').disabled = false;
     buildScene(runCfg); placeScene(initialState(runCfg));
     buildBeliefs(); k = 0; $('scrub').max = 0;
     banner('הבקר מתחיל בלי לדעת כלום על העולם', '');
-    try { makeWorker(); worker.postMessage({ cmd: 'run', problem: run.problem, seed: runCfg.seed }); }
+    try { makeWorker(); worker.postMessage({ cmd: 'run', problem: run.problem, seed: runCfg.seed, single: run.single }); }
     catch (err) { banner('הדפדפן לא מאפשר להריץ את החישוב ברקע', 'bad'); return; }
     play();
   }
@@ -650,12 +672,14 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     const m = ev.data;
     if (!run) return;
     if (m.type === 'chunk') { run.steps.push(...m.steps); $('scrub').max = Math.max(0, run.steps.length - 1); drawChart(); if (!playing && run.steps.length === m.steps.length) show(0); }
-    else if (m.type === 'done') { run.done = true; run.final = m.final; run.total = m.total; run.rand = m.rand; drawChart(); updateStepNo(); }
+    else if (m.type === 'done') { run.done = true; run.final = m.final; run.total = m.total; run.rand = m.rand; run.finishedAt = m.finishedAt; run.randFinishedAt = m.randFinishedAt; drawChart(); updateStepNo(); }
     else if (m.type === 'benchProgress') { $('benchOut').hidden = false; $('benchOut').textContent = `מריץ… ${m.i}/10`; }
     else if (m.type === 'bench') {
       const ratio = m.rand > 0 ? `, פי ${(m.ai / m.rand).toFixed(m.ai / m.rand >= 10 ? 0 : 1)}` : '';
       $('benchOut').hidden = false;
-      $('benchOut').innerHTML = `ממוצע על 10 seeds: <b>הבקר שלך ${Math.round(m.ai)}</b> מול מדיניות אקראית ${Math.round(m.rand)}${ratio}.`;
+      $('benchOut').innerHTML = m.single
+        ? `על 10 seeds: <b>הבקר שלך סיים ב-${m.fin}/10</b>${m.fin ? `, בממוצע אחרי ${Math.round(m.finAvg)} צעדים` : ''}. מדיניות אקראית סיימה ב-${m.rfin}/10${m.rfin ? `, בממוצע אחרי ${Math.round(m.rfinAvg)} צעדים` : ` תוך ${run.cfg.horizon} צעדים`}.`
+        : `ממוצע על 10 seeds: <b>הבקר שלך ${Math.round(m.ai)}</b> מול מדיניות אקראית ${Math.round(m.rand)}${ratio}.`;
       $('benchBtn').disabled = false;
     } else if (m.type === 'error') banner('שגיאה בריצה: ' + m.msg, 'bad');
   }
@@ -664,7 +688,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     $('benchBtn').disabled = true; $('benchOut').hidden = false; $('benchOut').textContent = 'מריץ… 0/10';
     const w = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + WORKER_MAIN], { type: 'text/javascript' })));
     w.onmessage = ev => { onWorker(ev); if (ev.data.type === 'bench' || ev.data.type === 'error') w.terminate(); };
-    w.postMessage({ cmd: 'bench', problem: run.problem, seed: run.cfg.seed });
+    w.postMessage({ cmd: 'bench', problem: run.problem, seed: run.cfg.seed, single: run.single });
   });
 
   function speed() { return +$('speed').value; }
@@ -708,7 +732,11 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     $('hR').textContent = Math.round(run.total); $('hRand').textContent = Math.round(run.rand);
     $('hStep').innerHTML = `${run.steps.length}<small>/${run.cfg.horizon}</small>`;
     $('hDel').textContent = `${last.d} · ${last.rd}`;
-    banner(`הריצה הסתיימה: ${Math.round(run.total)} מול ${Math.round(run.rand)} של מדיניות אקראית`, 'good');
+    if (run.single) {
+      const rnd = run.randFinishedAt ? `מדיניות אקראית סיימה אחרי ${run.randFinishedAt}` : `מדיניות אקראית לא סיימה ב-${run.cfg.horizon} צעדים`;
+      banner(run.finishedAt ? `כולם הגיעו אחרי ${run.finishedAt} צעדים · ${rnd}` : `נגמרו הצעדים לפני שכולם הגיעו · ${rnd}`, run.finishedAt ? 'good' : 'bad');
+      clearTimeout(bannerT);
+    } else banner(`הריצה הסתיימה: ${Math.round(run.total)} מול ${Math.round(run.rand)} של מדיניות אקראית`, 'good');
   }
   function effectsFor(st) {
     if (!st) return;
@@ -802,7 +830,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   // ---------- chart ----------
   let cx = null;
   function drawChart() {
-    const svg = $('chart'), steps = run.steps, H = run.cfg.horizon;
+    const svg = $('chart'), steps = run.steps, H = run.single ? Math.max(steps.length, 10) : run.cfg.horizon;
     svg.innerHTML = '';
     if (!steps.length) return;
     const L = 46, R = 630, T = 12, B = 164;
@@ -862,9 +890,20 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
   });
 
+  // ---------- run mode ----------
+  let runMode = 'single';
+  function syncMode() {
+    document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === runMode));
+    $('modeNote').textContent = runMode === 'single'
+      ? 'הריצה עוצרת ברגע שכולם הגיעו ליעד. במצב הזה הבקר לא משתמש באסטרטגיית loop ולא מאפס, כי בסבב אחד אין לזה טעם. כל השאר זהה לאלגוריתם.'
+      : 'כמו במטלה: אחרי שכולם הגיעו הבניין מתאפס והבקר ממשיך לצבור תגמול עד שנגמרים הצעדים, כולל אסטרטגיית loop. זה האלגוריתם בדיוק כפי שנכתב.';
+    if (cfg) renderEditor();
+  }
+  $('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; runMode = b.dataset.m; syncMode(); });
+
   // ---------- boot ----------
   cfg = fromPreset(PRESETS.find(P => P.name === 'e5_hard'));
   setMode('edit');
-  renderEditor();
+  syncMode();
 })();
 </script>

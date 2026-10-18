@@ -15,6 +15,11 @@ A browser lab where you build a building, hide how its world behaves, and watch 
    - cumulative reward against a random policy on the same world and seed
 4. **Compare.** One click averages 10 runs of the controller against the random policy.
 
+### Two ways a run can end
+
+- **When everyone has arrived** (the default). The run stops as soon as every person reaches their floor, and the lab reports how many steps it took. In this mode the controller always uses the `full` strategy and never resets, since a single round leaves no room for the `loop` strategy to pay off. Everything else is unchanged. On all 36 problems × 10 seeds it finished every run, in at most 50 steps ([`verify/single_round_check.js`](verify/single_round_check.js)). The random policy usually doesn't finish at all.
+- **As in the assignment.** After everyone arrives the building resets and the controller keeps collecting reward until the step budget runs out, `loop` strategy included. This is the algorithm exactly as written.
+
 ## The domain
 
 Elevators move between the floors they can reach and have a weight limit. Some people can only get to their destination by switching elevators on a shared floor. Actions are `MOVE{e,f}`, `ENTER{p,e}`, `EXIT{p,e}` and `RESET`, and every action costs one step out of a fixed budget.
@@ -29,7 +34,7 @@ The algorithm is in [`algorithm/controller.py`](algorithm/controller.py). It com
 - **Optimism for exploration.** A person it hasn't delivered yet is assumed to be worth `max(bonus, 1)`, so unexplored deliveries look attractive until real samples replace the guess.
 - **Planning on what it has learned.** A weighted A* search (W=3) finds the plan with the lowest expected cost, where an action that succeeds with probability *p* costs `1/p` steps. The heuristic counts each person's remaining board/exit costs plus the single largest elevator move still needed. Successors are pruned to moves that pick someone up, drop someone at their destination, or drop them at a floor where another elevator can carry them on.
 - **Replanning.** It follows the current plan while reality matches what the plan expected. It replans when something fails, when the plan runs out, and every 8 steps so newer estimates get used. After a search that gives up, it waits a few steps before searching again.
-- **Choosing a strategy.** It compares the reward per step of delivering everyone (`full`) with repeatedly delivering only the single most profitable person and resetting (`loop`), and switches between them as its estimates change.
+- **Choosing a strategy** (assignment mode). It compares the reward per step of delivering everyone (`full`) with repeatedly delivering only the single most profitable person and resetting (`loop`), and switches between them as its estimates change.
 
 ### A bug fix that matters
 
