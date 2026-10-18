@@ -273,7 +273,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
         <button class="btn primary" id="play" type="button" style="min-width:80px">עצור</button>
         <button class="btn" id="prev" type="button">‹</button>
         <button class="btn" id="next" type="button">›</button>
-        <select id="speed" aria-label="מהירות"><option value="2">2 צעדים/שנ׳</option><option value="5" selected>5 צעדים/שנ׳</option><option value="12">12 צעדים/שנ׳</option><option value="30">30 צעדים/שנ׳</option><option value="120">מהיר מאוד</option></select>
+        <select id="speed" aria-label="מהירות"><option value="2">מהירות איטית</option><option value="6" selected>מהירות בינונית</option><option value="20">מהירות גבוהה</option></select>
         <input type="range" id="scrub" min="0" max="0" value="0" dir="ltr" aria-label="ציר זמן">
         <span class="stepno" id="stepno"></span>
       </div>
@@ -309,13 +309,15 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
   function fromPreset(P) {
     const c = { name: P.name, height: P.height, horizon: P.horizon, goal: P.goal, seed: 1, E: {}, P: {} };
     for (const e in P.E) c.E[e] = { start: P.E[e][0], reach: P.E[e][1].slice().sort((a, b) => a - b), cap: P.E[e][2], p: P.ep[e] };
-    for (const p in P.P) c.P[p] = { start: P.P[p][0], w: P.P[p][1], goal: P.P[p][2], p: P.pp[p], rw: P.rw[p].slice() };
+    Object.keys(P.P).map(Number).sort((a, b) => a - b).forEach((p, i) => {
+      c.P[i + 1] = { start: P.P[p][0], w: P.P[p][1], goal: P.P[p][2], p: P.pp[p], rw: P.rw[p].slice() };
+    });
     return c;
   }
   function blank() {
     return { name: null, height: 5, horizon: 250, goal: 20, seed: 1,
       E: { 0: { start: 0, reach: [0, 1, 2, 3, 4, 5], cap: 10, p: 0.9 } },
-      P: { 10: { start: 0, w: 4, goal: 4, p: 0.9, rw: [3, 5, 7] }, 11: { start: 5, w: 3, goal: 1, p: 0.9, rw: [2, 4] } } };
+      P: { 1: { start: 0, w: 4, goal: 4, p: 0.9, rw: [3, 5, 7] }, 2: { start: 5, w: 3, goal: 1, p: 0.9, rw: [2, 4] } } };
   }
   const eidsOf = c => Object.keys(c.E).map(Number).sort((a, b) => a - b);
   const pidsOf = c => Object.keys(c.P).map(Number).sort((a, b) => a - b);
@@ -436,7 +438,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
     cfg.E[id] = { start: 0, reach, cap: 10, p: 0.9 }; cfg.name = null; renderEditor();
   });
   $('addPers').addEventListener('click', () => {
-    const ids = pidsOf(cfg), id = ids.length ? Math.max(...ids) + 1 : 10;
+    const ids = pidsOf(cfg), id = ids.length ? Math.max(...ids) + 1 : 1;
     cfg.P[id] = { start: 0, w: 4, goal: cfg.height, p: 0.9, rw: [3, 5, 7] }; cfg.name = null; renderEditor();
   });
 
