@@ -1,0 +1,1402 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>מוקד המעליות</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=Rubik:wght@400;500;600&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: lab bench. The right column holds the input (what the controller knows / what is hidden) and switches to the controller's mind during a run; the left column is the building cross-section with the reward timeline under it. */
+:root {
+  --bg: #e8edf1;
+  --surface: #f7f9fb;
+  --ink: #18212a;
+  --muted: #5c6b78;
+  --line: #c9d3db;
+  --wall: #d5dee5;
+  --wall-2: #c8d2da;
+  --slab: #7f8d98;
+  --shaft: #26313a;
+  --shaft-2: #303d48;
+  --led-bg: #12171b;
+  --led: #ffae1a;
+  --amber-soft: #fbe9c8;
+  --signal: #d9502a;
+  --signal-soft: #fbe0d6;
+  --ok: #23845a;
+  --ok-soft: #d4efe2;
+  --hidden: #6b4fc8;
+  --hidden-soft: #ebe5fb;
+  --e0: #1f8aa6; --e1: #7a5cd6; --e2: #c4467f; --e3: #5c8a1f;
+  --p0: #e07a1f; --p1: #2f9a4a; --p2: #2d6fd2; --p3: #b5389a; --p4: #8a6a1c; --p5: #0f8c8c;
+  --font-display: "Karantina", "Rubik", system-ui, sans-serif;
+  --font-body: "Rubik", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-led: "Share Tech Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1317; --surface: #161d23; --ink: #e5ecf1; --muted: #93a3b0; --line: #2b3842;
+    --wall: #1b242b; --wall-2: #212c34; --slab: #4c5a65; --shaft: #0b1014; --shaft-2: #131a20;
+    --led-bg: #07090b; --led: #ffb733; --amber-soft: #3a2d14; --signal: #ff7a50; --signal-soft: #3a2018; --ok: #4fcf8f; --ok-soft: #173426;
+    --hidden: #a991ff; --hidden-soft: #262040;
+    --e0: #3fb7d6; --e1: #a28af5; --e2: #ec73aa; --e3: #9ccc5a;
+    --p0: #f39a4a; --p1: #5fc777; --p2: #6b9cf2; --p3: #df6fc4; --p4: #c9a54b; --p5: #3fc7c7;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1317; --surface: #161d23; --ink: #e5ecf1; --muted: #93a3b0; --line: #2b3842;
+  --wall: #1b242b; --wall-2: #212c34; --slab: #4c5a65; --shaft: #0b1014; --shaft-2: #131a20;
+  --led-bg: #07090b; --led: #ffb733; --amber-soft: #3a2d14; --signal: #ff7a50; --signal-soft: #3a2018; --ok: #4fcf8f; --ok-soft: #173426;
+  --hidden: #a991ff; --hidden-soft: #262040;
+  --e0: #3fb7d6; --e1: #a28af5; --e2: #ec73aa; --e3: #9ccc5a;
+  --p0: #f39a4a; --p1: #5fc777; --p2: #6b9cf2; --p3: #df6fc4; --p4: #c9a54b; --p5: #3fc7c7;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px 36px;
+}
+.wrap { max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+button, select, input { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--led); outline-offset: 2px; }
+
+header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-height: 0.9; margin: 0; }
+.tagline { margin: 6px 0 0; color: var(--muted); max-width: 66ch; }
+.steps { display: flex; gap: 6px; align-items: center; font-size: 0.85rem; }
+.steps span { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--muted); }
+.steps span.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+.main { display: grid; grid-template-columns: minmax(330px, 0.95fr) minmax(0, 1.25fr); gap: 14px; align-items: start; }
+@media (max-width: 940px) { .main { grid-template-columns: minmax(0, 1fr); } .col.stage { order: -1; } }
+.col { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; min-width: 0; }
+.card h3 { margin: 0 0 10px; font-size: 0.82rem; font-weight: 600; color: var(--muted); letter-spacing: 0.04em; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card h3 .tag { font-size: 0.7rem; padding: 1px 8px; border-radius: 999px; font-weight: 500; letter-spacing: 0; }
+.tag.known { background: var(--ok-soft); color: var(--ok); }
+.tag.hide { background: var(--hidden-soft); color: var(--hidden); }
+.card.hidden-world { border-color: color-mix(in srgb, var(--hidden) 45%, var(--line)); }
+.muted { color: var(--muted); font-size: 0.82rem; }
+
+.btn { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+.btn.small { padding: 3px 9px; font-size: 0.82rem; }
+.btn.primary { background: var(--signal); border-color: var(--signal); color: #fff; font-weight: 600; }
+.btn.run { width: 100%; padding: 11px; font-size: 1.05rem; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.field { display: flex; flex-direction: column; gap: 3px; font-size: 0.78rem; color: var(--muted); }
+.field input, .field select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; color: var(--ink); font-size: 0.92rem; width: 92px; }
+.field input[type=text] { width: 120px; direction: ltr; }
+.preset { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+.preset select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 6px 8px; width: 170px; max-width: 100%; }
+
+.item { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.item-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.92rem; }
+.item-head .x { margin-inline-start: auto; }
+.dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: none; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; direction: ltr; }
+.chip { min-width: 30px; height: 28px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); font-family: var(--font-led); cursor: pointer; padding: 0 6px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.prob { display: flex; align-items: center; gap: 8px; }
+.prob input[type=range] { flex: 1 1 120px; accent-color: var(--hidden); min-width: 0; }
+.prob output { font-family: var(--font-led); min-width: 40px; text-align: left; direction: ltr; }
+.issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.84rem; }
+.issues li.err { color: var(--signal); }
+.issues li.warn { color: var(--muted); }
+
+.hud { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.hud > div { flex: 1 1 130px; background: var(--surface); padding: 9px 13px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.hud .k { font-size: 0.74rem; color: var(--muted); }
+.hud .v { font-family: var(--font-led); font-size: 1.45rem; line-height: 1.1; direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+.hud .v small { font-size: 0.82rem; color: var(--muted); }
+
+.scene { position: relative; background: var(--wall); border-radius: 14px; border: 1px solid var(--line); overflow: hidden; }
+.scene svg { display: block; width: 100%; height: auto; direction: ltr; }
+.banner { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 24px); background: var(--ink); color: var(--bg); padding: 6px 14px; border-radius: 999px; font-size: 0.88rem; font-weight: 500; pointer-events: none; text-align: center; transition: opacity .2s; }
+.banner.bad { background: var(--signal); color: #fff; }
+.banner.good { background: var(--ok); color: #fff; }
+.edit-note { position: absolute; bottom: 10px; inset-inline: 12px; text-align: center; font-size: 0.8rem; color: var(--muted); pointer-events: none; }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; }
+.controls select { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; }
+.controls input[type=range] { flex: 1 1 180px; accent-color: var(--led); min-width: 0; }
+.stepno { font-family: var(--font-led); min-width: 86px; text-align: center; direction: ltr; }
+
+.act { font-size: 1.12rem; font-weight: 600; }
+.raw { font-family: var(--font-led); font-size: 0.8rem; color: var(--muted); direction: ltr; text-align: right; }
+.pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 500; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.bad { background: var(--signal-soft); color: var(--signal); }
+.pill.amber { background: var(--amber-soft); color: var(--led); }
+.pill.neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+.plan { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; direction: ltr; justify-content: flex-end; }
+.plan span { font-family: var(--font-led); font-size: 0.74rem; padding: 2px 7px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
+.plan span:first-child { background: var(--amber-soft); color: var(--led); border-color: transparent; }
+.why { font-size: 0.84rem; color: var(--muted); margin: 6px 0 0; }
+
+.bel { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.bel th { text-align: start; font-weight: 500; color: var(--muted); font-size: 0.7rem; padding: 3px 4px; border-bottom: 1px solid var(--line); }
+.bel td { padding: 5px 4px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.bel tr:last-child td { border-bottom: 0; }
+.who { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; white-space: nowrap; }
+.bar { position: relative; height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; min-width: 60px; direction: ltr; }
+.bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--led); transition: width .2s; }
+.bar b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--hidden); }
+.num { font-family: var(--font-led); direction: ltr; text-align: right; white-space: nowrap; font-size: 0.78rem; }
+.num small { color: var(--muted); }
+.legend { font-size: 0.74rem; color: var(--muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+.legend span { display: inline-flex; align-items: center; gap: 5px; }
+.sw { width: 14px; height: 8px; border-radius: 3px; background: var(--led); display: inline-block; }
+
+.chart svg { width: 100%; height: auto; display: block; direction: ltr; cursor: crosshair; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; max-height: 190px; overflow: auto; }
+.log li { display: flex; gap: 8px; align-items: baseline; }
+.log .t { font-family: var(--font-led); color: var(--muted); font-size: 0.75rem; min-width: 34px; direction: ltr; text-align: right; }
+.log .r { margin-inline-start: auto; }
+.bench { font-size: 0.88rem; margin-top: 8px; }
+.foot { color: var(--muted); font-size: 0.8rem; }
+
+.car, .person { transition: transform var(--dur, 300ms) cubic-bezier(.45,.05,.3,1), opacity .3s; }
+.door { transition: transform .2s ease; }
+.car.open .door.l { transform: translateX(-13px); }
+.car.open .door.r { transform: translateX(13px); }
+.car.flash .cab { animation: flash .45s 2; }
+@keyframes flash { 50% { fill: var(--signal); } }
+.float { font: 700 22px var(--font-led); fill: var(--ok); animation: rise 1.1s ease-out forwards; }
+@keyframes rise { to { transform: translateY(-40px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .car, .person, .door, .bar i { transition: none !important; }
+  .car.flash .cab, .float { animation: none !important; }
+}
+</style>
+
+<div class="wrap" dir="rtl">
+  <header>
+    <div>
+      <h1>מוקד המעליות</h1>
+      <p class="tagline">מגדירים בניין ועולם, ואז הבקר ממטלה 3 מנסה להעביר בו את האנשים. הבקר לא רואה את אחוזי ההצלחה ואת התגמולים: הוא לומד אותם תוך כדי ריצה (למידה מחיזוקים) ומתכנן לפי מה שלמד. זה האלגוריתם מהקובץ <span dir="ltr">ex3_solution.py</span>, מתורגם ל-JavaScript. התרגום נבדק מול קוד הפייתון ובוחר את אותן פעולות בדיוק.</p>
+    </div>
+    <div class="steps"><span id="stepEdit" class="on">1 · הקלט</span><span id="stepRun">2 · הבקר רץ</span></div>
+  </header>
+
+  <div class="main">
+    <!-- right column: editor / mind -->
+    <div class="col">
+      <div id="editor" class="col">
+        <div class="card">
+          <h3>נקודת התחלה</h3>
+          <div class="preset">
+            <div class="field"><label for="preset">בעיה מוכנה מתוך <span dir="ltr">ex3_check.py</span></label><select id="preset"></select></div>
+            <button class="btn" id="blank" type="button">בניין ריק</button>
+          </div>
+          <p class="muted" id="presetNote" style="margin:8px 0 0"></p>
+        </div>
+
+        <div class="card">
+          <h3>הבניין <span class="tag known">הבקר יודע</span></h3>
+          <div class="row">
+            <div class="field"><label for="fHeight">קומה עליונה</label><input id="fHeight" type="number" min="1" max="12"></div>
+            <div class="field"><label for="fHorizon">מספר צעדים</label><input id="fHorizon" type="number" min="10" max="1000"></div>
+            <div class="field"><label for="fGoal">בונוס סבב מלא</label><input id="fGoal" type="number" min="0" max="1000"></div>
+            <div class="field"><label for="fSeed">seed</label><input id="fSeed" type="number" min="0" max="999999"></div>
+          </div>
+          <div id="elevList"></div>
+          <button class="btn small" id="addElev" type="button" style="margin-top:10px">+ מעלית</button>
+          <div id="persList"></div>
+          <button class="btn small" id="addPers" type="button" style="margin-top:10px">+ אדם</button>
+        </div>
+
+        <div class="card hidden-world">
+          <h3>העולם המוסתר <span class="tag hide">הבקר לא רואה</span></h3>
+          <p class="muted" style="margin:0 0 4px">את אלה הבקר צריך ללמוד לבד. מעלית שנכשלת נוחתת בקומה אקראית, אדם שנכשל לא זז, ותגמול מוגרל מהרשימה בכל העברה.</p>
+          <div id="hiddenList"></div>
+        </div>
+
+        <div class="card">
+          <ul class="issues" id="issues"></ul>
+          <button class="btn primary run" id="runBtn" type="button" style="margin-top:10px">הריצו את הבקר</button>
+        </div>
+      </div>
+
+      <div id="mind" class="col" hidden>
+        <div class="card">
+          <div class="row" style="justify-content:space-between">
+            <button class="btn" id="backBtn" type="button">חזרה לעריכה</button>
+            <button class="btn" id="benchBtn" type="button">השוואה על 10 הרצות</button>
+          </div>
+          <p class="bench" id="benchOut" hidden></p>
+        </div>
+        <div class="card">
+          <h3>הפעולה שהבקר בחר</h3>
+          <div class="row"><span class="act" id="actHe">–</span><span class="pill" id="actOut"></span></div>
+          <div class="raw" id="actRaw"></div>
+          <p class="why" id="actWhy"></p>
+        </div>
+        <div class="card">
+          <h3>אסטרטגיה ותוכנית ה-A*</h3>
+          <div class="row"><span class="pill" id="stratPill"></span><span id="stratText" class="muted"></span></div>
+          <div class="plan" id="plan"></div>
+        </div>
+        <div class="card">
+          <h3>מה הבקר למד <span class="tag hide">מול הערך האמיתי</span></h3>
+          <table class="bel" id="bel"></table>
+          <div class="legend"><span><i class="sw"></i>אומדן הבקר</span><span><i class="sw" style="width:2px;height:12px;background:var(--hidden)"></i>ערך אמיתי, מוסתר מהבקר</span><span>n = ניסיונות או דגימות</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- left column: building -->
+    <div class="col stage">
+      <section class="hud">
+        <div><span class="k">תגמול הבקר שלך</span><span class="v" id="hR">0</span></div>
+        <div><span class="k">מדיניות אקראית, אותו צעד</span><span class="v" id="hRand">–</span></div>
+        <div><span class="k">צעד</span><span class="v" id="hStep">0</span></div>
+        <div><span class="k">הגיעו ליעד · סבבים</span><span class="v" id="hDel">0 · 0</span></div>
+      </section>
+      <div class="scene" id="scene">
+        <svg id="svg" aria-label="חתך של הבניין"></svg>
+        <div class="banner" id="banner" style="opacity:0"></div>
+        <div class="edit-note" id="editNote">כך נראה הבניין במצב ההתחלתי. שינויים בקלט מתעדכנים כאן מיד.</div>
+      </div>
+      <div class="controls" id="controls" hidden>
+        <button class="btn primary" id="play" type="button" style="min-width:80px">עצור</button>
+        <button class="btn" id="prev" type="button">‹</button>
+        <button class="btn" id="next" type="button">›</button>
+        <select id="speed" aria-label="מהירות"><option value="2">2 צעדים/שנ׳</option><option value="5" selected>5 צעדים/שנ׳</option><option value="12">12 צעדים/שנ׳</option><option value="30">30 צעדים/שנ׳</option><option value="120">מהיר מאוד</option></select>
+        <input type="range" id="scrub" min="0" max="0" value="0" dir="ltr" aria-label="ציר זמן">
+        <span class="stepno" id="stepno"></span>
+      </div>
+      <div class="card chart" id="chartCard" hidden>
+        <h3>תגמול מצטבר · לחיצה קופצת לצעד</h3>
+        <svg id="chart" viewBox="0 0 640 190" aria-label="גרף תגמול מצטבר"></svg>
+        <div class="legend"><span><i class="sw"></i>הבקר שלך</span><span><i class="sw" style="background:var(--muted)"></i>מדיניות אקראית</span><span><i class="sw" style="background:var(--amber-soft)"></i>תקופות loop</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>סבב מלא</span></div>
+      </div>
+      <div class="card" id="logCard" hidden>
+        <h3>יומן</h3>
+        <ul class="log" id="log"></ul>
+      </div>
+    </div>
+  </div>
+  <p class="foot">חוקי העולם זהים למנוע של המטלה (<span dir="ltr">ext_elev.py</span>). כל פעולה, כולל RESET, עולה צעד אחד. "מדיניות אקראית" היא ה-baseline של הקורס: בחירה אחידה מבין הפעולות החוקיות, באותו עולם ובאותו seed.</p>
+</div>
+
+<script id="core">// JavaScript port of Ex3/ex3_solution.py (Controller) plus a copy of the
+// Ex3 engine rules (ext_elev.py). Person locations are encoded as numbers:
+// a floor f >= 0, or -(e + 1) when inside elevator e.
+// Objects keyed by integer ids iterate in ascending id order, which matches
+// the Python dict order (built from id-sorted state tuples).
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+// Iteration order of CPython's frozenset(<tuple of small non-negative ints>):
+// open addressing with linear probing (LINEAR_PROBES=9) and perturbation,
+// table starts at 8 slots and grows x4 when fill*5 >= mask*3.
+function pySetOrder(items) {
+  let mask = 7, table = new Array(8).fill(null), fill = 0;
+  const insert = (tab, m, key) => {
+    let perturb = key, i = key & m;
+    for (;;) {
+      if (tab[i] === null) { tab[i] = key; return true; }
+      if (tab[i] === key) return false;
+      if (i + 9 <= m) {
+        for (let j = 1; j <= 9; j++) {
+          if (tab[i + j] === null) { tab[i + j] = key; return true; }
+          if (tab[i + j] === key) return false;
+        }
+      }
+      perturb = Math.floor(perturb / 32);
+      i = (i * 5 + 1 + perturb) & m;
+    }
+  };
+  for (const k of items) {
+    if (insert(table, mask, k)) {
+      fill++;
+      if (fill * 5 >= mask * 3) {
+        let ns = 8; while (ns <= fill * 4) ns <<= 1;
+        const old = table; table = new Array(ns).fill(null); mask = ns - 1;
+        for (const v of old) if (v !== null) insert(table, mask, v);
+      }
+    }
+  }
+  return table.filter(v => v !== null);
+}
+
+// ------------------------------------------------------------------ //
+// Engine (mirrors ext_elev.Game)                                     //
+// ------------------------------------------------------------------ //
+class Engine {
+  constructor(problem, seed) {
+    this.problem = problem;
+    this.rng = mulberry32(seed >>> 0);
+    this.maxSteps = problem.horizon;
+    this.goalReward = problem.goal_reward;
+    this.eids = Object.keys(problem.Elevators).map(Number).sort((a, b) => a - b);
+    this.pids = Object.keys(problem.Persons).map(Number).sort((a, b) => a - b);
+    this.reach = {}; this.cap = {}; this.pw = {}; this.pg = {};
+    for (const e of this.eids) {
+      const [, F, c] = problem.Elevators[e];
+      this.reach[e] = pySetOrder(F); this.cap[e] = c;  // frozenset iteration order, as in ext_elev
+    }
+    for (const p of this.pids) {
+      const [, w, g] = problem.Persons[p];
+      this.pw[p] = w; this.pg[p] = g;
+    }
+    this.initial = {
+      e: this.eids.map(e => [e, problem.Elevators[e][0], 0]),
+      p: this.pids.map(p => [p, 'floor', problem.Persons[p][0]]),
+      rem: this.pids.length,
+    };
+    this.state = this.initial;
+    this.steps = 0; this.reward = 0; this.lastGained = 0; this.done = false;
+    this.lastOutcome = null;
+  }
+
+  submit(action) {
+    if (this.done) return;
+    const before = this.reward;
+    let out;
+    if (action === 'RESET') { this.state = this.initial; out = { kind: 'reset' }; }
+    else {
+      const m = action.match(/^(MOVE|ENTER|EXIT)\{(-?\d+),(-?\d+)\}$/);
+      if (!m) throw new Error('Unknown action ' + action);
+      const a = +m[2], b = +m[3];
+      if (m[1] === 'MOVE') out = this._move(a, b);
+      else if (m[1] === 'ENTER') out = this._enter(a, b);
+      else out = this._exit(a, b);
+    }
+    this.steps++;
+    this.lastGained = this.reward - before;
+    if (this.steps >= this.maxSteps) this.done = true;
+    this.lastOutcome = out;
+    return out;
+  }
+
+  _elev(e) { return this.state.e.find(x => x[0] === e); }
+  _person(p) { return this.state.p.find(x => x[0] === p); }
+
+  _move(e, f) {
+    if (!this.reach[e] || !this.reach[e].includes(f)) throw new Error(`Illegal MOVE{${e},${f}}`);
+    const [, cur, w] = this._elev(e);
+    let nf, ok;
+    if (this.rng() < this.problem.elevator_chosen_action_prob[e]) { nf = f; ok = true; }
+    else {
+      const opts = Array.from(new Set([cur].concat(this.reach[e].filter(x => x !== f)))).sort((a, b) => a - b);
+      nf = opts[Math.floor(this.rng() * opts.length)]; ok = false;
+    }
+    this.state = { e: this.state.e.map(x => x[0] === e ? [e, nf, w] : x), p: this.state.p, rem: this.state.rem };
+    return { kind: 'move', ok, from: cur, to: f, landed: nf };
+  }
+
+  _enter(p, e) {
+    const pr = this._person(p), [, cur, w] = this._elev(e);
+    if (!pr || pr[1] !== 'floor') throw new Error(`Illegal ENTER{${p},${e}}: not on a floor`);
+    if (pr[2] !== cur) throw new Error(`Illegal ENTER{${p},${e}}: different floor`);
+    if (w + this.pw[p] > this.cap[e]) throw new Error(`Illegal ENTER{${p},${e}}: capacity`);
+    if (this.rng() < this.problem.person_chosen_action_prob[p]) {
+      this.state = {
+        e: this.state.e.map(x => x[0] === e ? [e, cur, w + this.pw[p]] : x),
+        p: this.state.p.map(x => x[0] === p ? [p, 'in', e] : x),
+        rem: this.state.rem,
+      };
+      return { kind: 'enter', ok: true };
+    }
+    return { kind: 'enter', ok: false };
+  }
+
+  _exit(p, e) {
+    const pr = this._person(p), [, cur, w] = this._elev(e);
+    if (!pr || pr[1] !== 'in' || pr[2] !== e) throw new Error(`Illegal EXIT{${p},${e}}`);
+    if (this.rng() < this.problem.person_chosen_action_prob[p]) {
+      const elevs = this.state.e.map(x => x[0] === e ? [e, cur, w - this.pw[p]] : x);
+      if (cur === this.pg[p]) {
+        const list = this.problem.persons_reward[p];
+        const r = list[Math.floor(this.rng() * list.length)];
+        this.reward += r;
+        const rem = this.state.rem - 1;
+        if (rem === 0) {
+          this.reward += this.goalReward;
+          this.state = this.initial;
+          return { kind: 'exit', ok: true, delivered: true, r, goal: true, floor: cur };
+        }
+        this.state = { e: elevs, p: this.state.p.filter(x => x[0] !== p), rem };
+        return { kind: 'exit', ok: true, delivered: true, r, goal: false, floor: cur };
+      }
+      this.state = { e: elevs, p: this.state.p.map(x => x[0] === p ? [p, 'floor', cur] : x), rem: this.state.rem };
+      return { kind: 'exit', ok: true, delivered: false, floor: cur };
+    }
+    return { kind: 'exit', ok: false };
+  }
+
+  // GameAPI surface used by the controller
+  get_reachable() { return this.reach; }
+  get_capacities() { return this.cap; }
+  get_initial_state() { return this.initial; }
+  get_person_weight(p) { return this.pw[p]; }
+  get_person_goal(p) { return this.pg[p]; }
+  get_goal_reward() { return this.goalReward; }
+  get_max_steps() { return this.maxSteps; }
+  get_last_gained_reward() { return this.lastGained; }
+}
+
+// ------------------------------------------------------------------ //
+// Binary heap ordered by (f, cnt), like heapq on (f, cnt, ...)        //
+// ------------------------------------------------------------------ //
+class Heap {
+  constructor() { this.a = []; }
+  get size() { return this.a.length; }
+  less(x, y) { return x[0] < y[0] || (x[0] === y[0] && x[1] < y[1]); }
+  push(v) {
+    const a = this.a; a.push(v); let i = a.length - 1;
+    while (i > 0) { const j = (i - 1) >> 1; if (this.less(a[i], a[j])) { [a[i], a[j]] = [a[j], a[i]]; i = j; } else break; }
+  }
+  pop() {
+    const a = this.a, top = a[0], last = a.pop();
+    if (a.length) {
+      a[0] = last; let i = 0;
+      for (;;) {
+        const l = 2 * i + 1, r = l + 1; let m = i;
+        if (l < a.length && this.less(a[l], a[m])) m = l;
+        if (r < a.length && this.less(a[r], a[m])) m = r;
+        if (m === i) break; [a[i], a[m]] = [a[m], a[i]]; i = m;
+      }
+    }
+    return top;
+  }
+}
+
+const isFloor = v => v >= 0;
+const inElev = v => -v - 1;
+const encIn = e => -(e + 1);
+const objEq = (a, b) => {
+  const ka = Object.keys(a), kb = Object.keys(b);
+  if (ka.length !== kb.length) return false;
+  for (const k of ka) if (a[k] !== b[k]) return false;
+  return true;
+};
+const stEq = (x, y) => objEq(x[0], y[0]) && objEq(x[1], y[1]) && objEq(x[2], y[2]);
+
+// ------------------------------------------------------------------ //
+// Controller (port of ex3_solution.Controller)                        //
+// ------------------------------------------------------------------ //
+class Controller {
+  constructor(game, opts = {}) {
+    this.REPLAN_PERIOD = 8;
+    this.ASTAR_TIME_BUDGET = opts.timeBudget != null ? opts.timeBudget : 1.0;
+    this.now = opts.now || (() => (typeof performance !== 'undefined' ? performance.now() : Date.now()) / 1000);
+
+    this.game = game;
+    const reach = game.get_reachable();
+    this.capacities = game.get_capacities();
+    this.initial_state = game.get_initial_state();
+    const [elevators0, persons0] = [this.initial_state.e, this.initial_state.p];
+    this.all_eids = elevators0.map(x => x[0]);
+    this.all_pids = persons0.map(x => x[0]);
+    // reachOrder: iteration order for MOVE generation; reachSet for membership
+    this.reachOrder = {}; this.reachSet = {};
+    for (const e of this.all_eids) { this.reachOrder[e] = reach[e].slice(); this.reachSet[e] = new Set(reach[e]); }
+    this.initial_ef = {}; this.initial_el = {}; this.initial_floor = {};
+    for (const [e, f] of elevators0) { this.initial_ef[e] = f; this.initial_el[e] = 0; }
+    for (const [p, , f] of persons0) this.initial_floor[p] = f;
+
+    this.pw = {}; this.pg = {};
+    for (const p of this.all_pids) { this.pw[p] = game.get_person_weight(p); this.pg[p] = game.get_person_goal(p); }
+    this.goal_r = game.get_goal_reward();
+    this.horizon = game.get_max_steps();
+
+    // connectivity (floors reachable through transfers)
+    const adj = {};
+    for (const e1 of this.all_eids) {
+      adj[e1] = new Set();
+      for (const e2 of this.all_eids) if (e1 !== e2 && [...this.reachSet[e1]].some(f => this.reachSet[e2].has(f))) adj[e1].add(e2);
+    }
+    this.ecr = {};
+    for (const e of this.all_eids) {
+      const vis = new Set([e]), q = [e], floors = new Set(this.reachSet[e]);
+      while (q.length) {
+        const c = q.pop();
+        for (const f of this.reachSet[c]) floors.add(f);
+        for (const n of adj[c]) if (!vis.has(n)) { vis.add(n); q.push(n); }
+      }
+      this.ecr[e] = floors;
+    }
+
+    this.e_succ = {}; this.e_att = {}; this.p_succ = {}; this.p_att = {}; this.p_rew_sum = {}; this.p_rew_n = {};
+    for (const e of this.all_eids) { this.e_succ[e] = 0; this.e_att[e] = 0; }
+    for (const p of this.all_pids) { this.p_succ[p] = 0; this.p_att[p] = 0; this.p_rew_sum[p] = 0; this.p_rew_n[p] = 0; }
+    this._reward_prior = Math.max(this.goal_r, 1.0);
+    this.mc = {}; this.pc = {};
+    for (const e of this.all_eids) this.mc[e] = 1.0;
+    for (const p of this.all_pids) this.pc[p] = 1.0;
+
+    this.prev_action = null; this.prev_ef = null; this.prev_total_remaining = null;
+    this._strategy = 'full'; this._loop_pid = null;
+    this._plan_actions = []; this._plan_states = []; this._plan_idx = 0;
+    this._calls_since_replan = 0; this._astar_cooldown = 0;
+  }
+
+  static _parse_pair(act) {
+    const m = act.match(/\{(-?\d+),(-?\d+)\}/);
+    return [+m[1], +m[2]];
+  }
+
+  _learn_from_last_action(state) {
+    if (this.prev_action === null) return;
+    const act = this.prev_action;
+    if (act === 'RESET') return;
+    if (act.startsWith('MOVE')) {
+      const [e, tgt] = Controller._parse_pair(act);
+      const new_f = state.e.find(x => x[0] === e)[1];
+      const origin = this.prev_ef[e];
+      if (tgt !== origin) { this.e_att[e] += 1; if (new_f === tgt) this.e_succ[e] += 1; }
+    } else if (act.startsWith('ENTER')) {
+      const [p, e] = Controller._parse_pair(act);
+      const loc = state.p.find(x => x[0] === p);
+      this.p_att[p] += 1;
+      if (loc[1] === 'in' && loc[2] === e) this.p_succ[p] += 1;
+    } else if (act.startsWith('EXIT')) {
+      const [p] = Controller._parse_pair(act);
+      const found = state.p.find(x => x[0] === p) || null;
+      this.p_att[p] += 1;
+      let last_r = this.game.get_last_gained_reward();
+      if (last_r > 0) {
+        this.p_succ[p] += 1;
+        if (this.prev_total_remaining === 1) last_r -= this.goal_r;
+        this.p_rew_sum[p] += last_r;
+        this.p_rew_n[p] += 1;
+      } else if (found !== null && found[1] === 'floor') {
+        this.p_succ[p] += 1;
+      }
+    }
+  }
+
+  _sample_probs() {
+    for (const e of this.all_eids) {
+      const p = (this.e_succ[e] + 1) / (this.e_att[e] + 2);
+      this.mc[e] = 1.0 / Math.max(p, 0.05);
+    }
+    for (const q of this.all_pids) {
+      const p = (this.p_succ[q] + 1) / (this.p_att[q] + 2);
+      this.pc[q] = 1.0 / Math.max(p, 0.05);
+    }
+  }
+
+  _reward_estimate(p) {
+    const n = this.p_rew_n[p];
+    if (n === 0) return this._reward_prior;
+    return (this.p_rew_sum[p] + this._reward_prior) / (n + 1);
+  }
+
+  choose_next_action(state) {
+    this._learn_from_last_action(state);
+    const total_remaining = state.rem;
+    if (!state.p.length) {
+      this.prev_action = 'RESET';
+      this.prev_ef = {}; for (const [e, f] of state.e) this.prev_ef[e] = f;
+      this.prev_total_remaining = total_remaining;
+      return 'RESET';
+    }
+    const ef = {}, el = {}, pl = {};
+    for (const [e, f, w] of state.e) { ef[e] = f; el[e] = w; }
+    for (const [p, k, v] of state.p) pl[p] = k === 'floor' ? v : encIn(v);
+
+    const need_strategy_refresh = this._calls_since_replan >= this.REPLAN_PERIOD;
+    this._calls_since_replan += 1;
+
+    let need_reroute = need_strategy_refresh || this._plan_idx >= this._plan_actions.length;
+    if (!need_reroute) {
+      const idx = this._plan_idx;
+      if (this._strategy === 'loop') {
+        const pid = this._loop_pid;
+        const cur = (pid in pl) ? [ef, el, { [pid]: pl[pid] }] : null;
+        need_reroute = cur === null || !(idx < this._plan_states.length && stEq(this._plan_states[idx], cur));
+      } else {
+        need_reroute = !(idx < this._plan_states.length && stEq(this._plan_states[idx], [ef, el, pl]));
+      }
+    }
+
+    if (need_strategy_refresh || need_reroute) this._sample_probs();
+    if (need_strategy_refresh) { this._decide_strategy(ef, el, pl); this._calls_since_replan = 0; need_reroute = true; }
+    this.lastReplanned = false;
+    if (need_reroute) {
+      if (this._astar_cooldown > 0) this._astar_cooldown -= 1;
+      else { this._reroute(ef, el, pl); this.lastReplanned = true; }
+    }
+
+    let action;
+    if (this._strategy === 'loop' && this._plan_idx === 0 && !this._isInitial(state)) action = 'RESET';
+    else {
+      action = this._take_from_plan();
+      if (action === null) action = this._strategy === 'loop' ? 'RESET' : this._greedy(ef, el, pl);
+    }
+    this.prev_action = action; this.prev_ef = ef; this.prev_total_remaining = total_remaining;
+    return action;
+  }
+
+  _isInitial(state) {
+    const I = this.initial_state;
+    if (state.rem !== I.rem || state.e.length !== I.e.length || state.p.length !== I.p.length) return false;
+    for (let i = 0; i < I.e.length; i++) for (let j = 0; j < 3; j++) if (state.e[i][j] !== I.e[i][j]) return false;
+    for (let i = 0; i < I.p.length; i++) for (let j = 0; j < 3; j++) if (state.p[i][j] !== I.p[i][j]) return false;
+    return true;
+  }
+
+  _take_from_plan() {
+    if (this._plan_idx < this._plan_actions.length) return this._plan_actions[this._plan_idx++];
+    return null;
+  }
+
+  _decide_strategy(ef, el, pl) {
+    const apr = {};
+    for (const p of this.all_pids) apr[p] = this._reward_estimate(p);
+    const full_cost = this._h(ef, pl);
+    let full_rew = 0; for (const p in pl) full_rew += apr[p]; full_rew += this.goal_r;
+    const full_vps = full_cost > 0 ? full_rew / full_cost : Infinity;
+    let best_vps = -1.0, best_pid = null;
+    for (const pid of this.all_pids) {
+      const cost = this._h(this.initial_ef, { [pid]: this.initial_floor[pid] }) + 1.0;
+      const vps = apr[pid] / cost;
+      if (vps > best_vps) { best_vps = vps; best_pid = pid; }
+    }
+    if (best_pid !== null && best_vps > full_vps) { this._strategy = 'loop'; this._loop_pid = best_pid; }
+    else { this._strategy = 'full'; this._loop_pid = null; }
+  }
+
+  _reroute(ef, el, pl) {
+    let res;
+    if (this._strategy === 'loop') {
+      const pid = this._loop_pid;
+      res = this._astar(this.initial_ef, this.initial_el, { [pid]: this.initial_floor[pid] });
+    } else res = this._astar(ef, el, pl);
+    this._plan_actions = res[0]; this._plan_states = res[1]; this._plan_idx = 0;
+    if (!res[0].length) this._astar_cooldown = this.REPLAN_PERIOD;
+  }
+
+  _isGoal(pl) { for (const p in pl) { const v = pl[p]; if (!(isFloor(v) && v === this.pg[p])) return false; } return true; }
+  _sk(ef, pl) { let s = ''; for (const e in ef) s += ef[e] + ','; s += '|'; for (const p in pl) s += p + ':' + pl[p] + ','; return s; }
+
+  _astar(ef0, el0, pl0) {
+    const start = [ef0, el0, pl0];
+    if (this._isGoal(pl0)) return [[], [start]];
+    const W = 3.0;
+    let cnt = 0;
+    const heap = new Heap();
+    heap.push([W * this._h(ef0, pl0), cnt, this._sk(ef0, pl0), ef0, el0, pl0, 0.0, null]);
+    const best = new Map();
+    let expansions = 0;
+    const deadline = this.now() + this.ASTAR_TIME_BUDGET;
+    while (heap.size) {
+      const node = heap.pop();
+      const [, , sk, ef, el, pl, g] = node;
+      const b = best.get(sk);
+      if (b !== undefined && b <= g) continue;
+      best.set(sk, g);
+      if (this._isGoal(pl)) {
+        const acts = [], states = [];
+        for (let n = node; n; n = n[7]) { states.push([n[3], n[4], n[5]]); if (n[8] !== undefined) acts.push(n[8]); }
+        acts.reverse(); states.reverse();
+        return [acts, states];
+      }
+      expansions += 1;
+      if (expansions > 20000 || (expansions % 256 === 0 && this.now() > deadline)) return [[], [start]];
+      for (const [act, nef, nel, npl, cost] of this._succs(ef, el, pl)) {
+        const nsk = this._sk(nef, npl), ng = g + cost;
+        const bb = best.get(nsk);
+        if (bb === undefined || bb > ng) {
+          cnt += 1;
+          heap.push([ng + W * this._h(nef, npl), cnt, nsk, nef, nel, npl, ng, node, act]);
+        }
+      }
+    }
+    return [[], [start]];
+  }
+
+  _succs(ef, el, pl) {
+    const res = [], fp = {}, ep_ = {};
+    for (const e in ef) ep_[e] = [];
+    for (const p in pl) {
+      const v = pl[p];
+      if (isFloor(v)) (fp[v] || (fp[v] = [])).push(+p);
+      else ep_[inElev(v)].push(+p);
+    }
+    const eids = Object.keys(ef).map(Number);
+    for (const eid of eids) {
+      const floor = ef[eid];
+      for (const tgt of this.reachOrder[eid]) {
+        if (tgt === floor) continue;
+        const useful =
+          (fp[tgt] || []).some(p => el[eid] + this.pw[p] <= this.capacities[eid] && this.ecr[eid].has(this.pg[p])) ||
+          ep_[eid].some(p => this.pg[p] === tgt) ||
+          ep_[eid].some(p => !this.reachSet[eid].has(this.pg[p]) &&
+            eids.some(e2 => e2 !== eid && this.reachSet[e2].has(tgt) && this.ecr[e2].has(this.pg[p])));
+        if (useful) res.push([`MOVE{${eid},${tgt}}`, { ...ef, [eid]: tgt }, el, pl, this.mc[eid]]);
+      }
+    }
+    for (const eid of eids) {
+      const floor = ef[eid];
+      for (const pid of (fp[floor] || [])) {
+        if (el[eid] + this.pw[pid] <= this.capacities[eid] && this.ecr[eid].has(this.pg[pid])) {
+          res.push([`ENTER{${pid},${eid}}`, ef, { ...el, [eid]: el[eid] + this.pw[pid] }, { ...pl, [pid]: encIn(eid) }, this.pc[pid]]);
+        }
+      }
+    }
+    for (const ps in pl) {
+      const v = pl[ps]; if (isFloor(v)) continue;
+      const pid = +ps, eid = inElev(v), floor = ef[eid], goal = this.pg[pid];
+      const should_exit = floor === goal ||
+        (!this.reachSet[eid].has(goal) && eids.some(e2 => e2 !== eid && this.reachSet[e2].has(floor) && this.ecr[e2].has(goal)));
+      if (should_exit) res.push([`EXIT{${pid},${eid}}`, ef, { ...el, [eid]: el[eid] - this.pw[pid] }, { ...pl, [pid]: floor }, this.pc[pid]]);
+    }
+    return res;
+  }
+
+  _h(ef, pl) {
+    let h = 0.0, max_e = 0.0;
+    for (const ps in pl) {
+      const v = pl[ps], goal = this.pg[ps];
+      if (isFloor(v)) {
+        if (v === goal) continue;
+        const f = v;
+        h += 2.0 * this.pc[ps];
+        let best = null;
+        for (const e in ef) {
+          if (this.reachSet[e].has(f) && this.reachSet[e].has(goal)) {
+            const c = (ef[e] !== f ? this.mc[e] : 0.0) + this.mc[e];
+            if (best === null || c < best) best = c;
+          }
+        }
+        if (best !== null) max_e = Math.max(max_e, best);
+      } else {
+        const eid = inElev(v);
+        h += this.pc[ps];
+        if (ef[eid] !== goal) max_e = Math.max(max_e, this.mc[eid]);
+      }
+    }
+    return h + max_e;
+  }
+
+  _greedy(ef, el, pl) {
+    for (const ps in pl) { const v = pl[ps]; if (!isFloor(v)) { const eid = inElev(v); if (ef[eid] === this.pg[ps]) return `EXIT{${ps},${eid}}`; } }
+    for (const ps in pl) {
+      const v = pl[ps];
+      if (isFloor(v)) for (const e in ef) if (ef[e] === v && el[e] + this.pw[ps] <= this.capacities[e]) return `ENTER{${ps},${e}}`;
+    }
+    for (const e in ef) { const floor = ef[e]; for (const f of [...this.reachSet[e]].sort((a, b) => a - b)) if (f !== floor) return `MOVE{${e},${f}}`; }
+    return 'RESET';
+  }
+
+  // snapshot of what the controller currently believes (for the UI)
+  beliefs() {
+    const ep = {}, en = {}, pp = {}, pn = {}, rw = {}, rn = {};
+    for (const e of this.all_eids) { ep[e] = (this.e_succ[e] + 1) / (this.e_att[e] + 2); en[e] = this.e_att[e]; }
+    for (const p of this.all_pids) { pp[p] = (this.p_succ[p] + 1) / (this.p_att[p] + 2); pn[p] = this.p_att[p]; rw[p] = this._reward_estimate(p); rn[p] = this.p_rew_n[p]; }
+    return { ep, en, pp, pn, rw, rn };
+  }
+  upcoming(n) { return this._plan_actions.slice(this._plan_idx, this._plan_idx + n); }
+}
+
+if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulberry32, pySetOrder };
+</script>
+<script>
+(function () {
+  const PRESETS = [{"name":"p1_easy","height":6,"horizon":250,"goal":30,"E":{"0":[0,[0,1,2,3],8],"1":[4,[2,4,5,6],10]},"P":{"10":[0,3,3],"11":[2,4,6],"12":[4,5,0]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[2,3,6,10],"11":[1,5,6,10],"12":[3,4,8,12]}},{"name":"e1_easy","height":5,"horizon":250,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],15],"1":[5,[0,1,2,3,4,5],15]},"P":{"10":[0,3,5],"11":[5,3,0],"12":[3,3,1]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[3,5,7],"11":[3,5,7],"12":[2,4,6]}},{"name":"e2_easy","height":6,"horizon":250,"goal":20,"E":{"0":[0,[0,1,2,3],10],"1":[6,[3,4,5,6],10]},"P":{"10":[1,3,3],"11":[5,3,4],"12":[0,3,2]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[2,4,6],"11":[1,3,5],"12":[2,4,6]}},{"name":"e3_easy","height":6,"horizon":250,"goal":30,"E":{"0":[0,[0,1,2,3,4],10],"1":[6,[2,4,5,6],10]},"P":{"10":[0,3,5],"11":[6,3,1],"12":[3,4,6]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[3,5,8,10],"11":[3,5,8,10],"12":[4,6,8,12]}},{"name":"e4_easy","height":5,"horizon":250,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],7],"1":[5,[0,1,2,3,4,5],7]},"P":{"10":[0,5,5],"11":[0,5,3],"12":[5,5,0]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[2,4,6,8],"11":[2,4,6,8],"12":[2,4,6,8]}},{"name":"e5_easy","height":7,"horizon":250,"goal":25,"E":{"0":[0,[0,1,2,3,4],12],"1":[7,[3,4,5,6,7],12]},"P":{"10":[1,4,3],"11":[6,4,7],"12":[0,4,7]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[2,4,6],"11":[3,5,7],"12":[4,6,8,10]}},{"name":"m1_easy","height":6,"horizon":250,"goal":40,"E":{"0":[0,[0,1,2,3],12],"1":[6,[3,4,5,6],12]},"P":{"10":[0,4,5],"11":[5,4,0],"12":[2,4,6],"13":[5,4,1]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95,"13":0.95},"rw":{"10":[3,5,8],"11":[3,5,8],"12":[3,5,8],"13":[3,5,8]}},{"name":"m2_easy","height":8,"horizon":250,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,6],"13":[6,3,1]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95,"13":0.95},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[2,4,6,8],"13":[2,4,6,8]}},{"name":"m3_easy","height":8,"horizon":250,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10],"2":[4,[2,7],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,7],"13":[6,3,1]},"ep":{"0":0.95,"1":0.95,"2":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95,"13":0.95},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[4,6,8,10],"13":[2,4,6,8]}},{"name":"m4_easy","height":6,"horizon":250,"goal":30,"E":{"0":[0,[0,1,2,3,4,5,6],8],"1":[6,[0,1,2,3,4,5,6],8]},"P":{"10":[0,5,6],"11":[0,5,4],"12":[6,5,0],"13":[6,5,2],"14":[3,5,6]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95,"13":0.95,"14":0.95},"rw":{"10":[2,4,6],"11":[2,4,6],"12":[2,4,6],"13":[2,4,6],"14":[3,5,7]}},{"name":"m5_easy","height":8,"horizon":250,"goal":40,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[4,5,6,7,8],10]},"P":{"10":[0,6,8],"11":[0,4,5],"12":[8,6,0],"13":[8,5,3]},"ep":{"0":0.95,"1":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95,"13":0.95},"rw":{"10":[4,6,8,10],"11":[3,5,7,9],"12":[4,6,8,10],"13":[3,5,7,9]}},{"name":"rl_easy","height":2,"horizon":250,"goal":5,"E":{"0":[0,[0,1,2],6]},"P":{"10":[0,3,1],"11":[0,3,2],"12":[2,3,0]},"ep":{"0":0.95},"pp":{"10":0.95,"11":0.95,"12":0.95},"rw":{"10":[50,50],"11":[1],"12":[1]}},{"name":"p1_med","height":6,"horizon":375,"goal":30,"E":{"0":[0,[0,1,2,3],8],"1":[4,[2,4,5,6],10]},"P":{"10":[0,3,3],"11":[2,4,6],"12":[4,5,0]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[2,3,6,10],"11":[1,5,6,10],"12":[3,4,8,12]}},{"name":"e1_med","height":5,"horizon":375,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],15],"1":[5,[0,1,2,3,4,5],15]},"P":{"10":[0,3,5],"11":[5,3,0],"12":[3,3,1]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[3,5,7],"11":[3,5,7],"12":[2,4,6]}},{"name":"e2_med","height":6,"horizon":375,"goal":20,"E":{"0":[0,[0,1,2,3],10],"1":[6,[3,4,5,6],10]},"P":{"10":[1,3,3],"11":[5,3,4],"12":[0,3,2]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[2,4,6],"11":[1,3,5],"12":[2,4,6]}},{"name":"e3_med","height":6,"horizon":375,"goal":30,"E":{"0":[0,[0,1,2,3,4],10],"1":[6,[2,4,5,6],10]},"P":{"10":[0,3,5],"11":[6,3,1],"12":[3,4,6]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[3,5,8,10],"11":[3,5,8,10],"12":[4,6,8,12]}},{"name":"e4_med","height":5,"horizon":375,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],7],"1":[5,[0,1,2,3,4,5],7]},"P":{"10":[0,5,5],"11":[0,5,3],"12":[5,5,0]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[2,4,6,8],"11":[2,4,6,8],"12":[2,4,6,8]}},{"name":"e5_med","height":7,"horizon":375,"goal":25,"E":{"0":[0,[0,1,2,3,4],12],"1":[7,[3,4,5,6,7],12]},"P":{"10":[1,4,3],"11":[6,4,7],"12":[0,4,7]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[2,4,6],"11":[3,5,7],"12":[4,6,8,10]}},{"name":"m1_med","height":6,"horizon":375,"goal":40,"E":{"0":[0,[0,1,2,3],12],"1":[6,[3,4,5,6],12]},"P":{"10":[0,4,5],"11":[5,4,0],"12":[2,4,6],"13":[5,4,1]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9,"13":0.85},"rw":{"10":[3,5,8],"11":[3,5,8],"12":[3,5,8],"13":[3,5,8]}},{"name":"m2_med","height":8,"horizon":375,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,6],"13":[6,3,1]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9,"13":0.85},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[2,4,6,8],"13":[2,4,6,8]}},{"name":"m3_med","height":8,"horizon":375,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10],"2":[4,[2,7],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,7],"13":[6,3,1]},"ep":{"0":0.95,"1":0.9,"2":0.85},"pp":{"10":0.9,"11":0.85,"12":0.9,"13":0.85},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[4,6,8,10],"13":[2,4,6,8]}},{"name":"m4_med","height":6,"horizon":375,"goal":30,"E":{"0":[0,[0,1,2,3,4,5,6],8],"1":[6,[0,1,2,3,4,5,6],8]},"P":{"10":[0,5,6],"11":[0,5,4],"12":[6,5,0],"13":[6,5,2],"14":[3,5,6]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9,"13":0.85,"14":0.9},"rw":{"10":[2,4,6],"11":[2,4,6],"12":[2,4,6],"13":[2,4,6],"14":[3,5,7]}},{"name":"m5_med","height":8,"horizon":375,"goal":40,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[4,5,6,7,8],10]},"P":{"10":[0,6,8],"11":[0,4,5],"12":[8,6,0],"13":[8,5,3]},"ep":{"0":0.95,"1":0.9},"pp":{"10":0.9,"11":0.85,"12":0.9,"13":0.85},"rw":{"10":[4,6,8,10],"11":[3,5,7,9],"12":[4,6,8,10],"13":[3,5,7,9]}},{"name":"rl_med","height":2,"horizon":375,"goal":5,"E":{"0":[0,[0,1,2],6]},"P":{"10":[0,3,1],"11":[0,3,2],"12":[2,3,0]},"ep":{"0":0.95},"pp":{"10":0.9,"11":0.85,"12":0.9},"rw":{"10":[50,50],"11":[1],"12":[1]}},{"name":"p1_hard","height":6,"horizon":500,"goal":30,"E":{"0":[0,[0,1,2,3],8],"1":[4,[2,4,5,6],10]},"P":{"10":[0,3,3],"11":[2,4,6],"12":[4,5,0]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[2,3,6,10],"11":[1,5,6,10],"12":[3,4,8,12]}},{"name":"e1_hard","height":5,"horizon":500,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],15],"1":[5,[0,1,2,3,4,5],15]},"P":{"10":[0,3,5],"11":[5,3,0],"12":[3,3,1]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[3,5,7],"11":[3,5,7],"12":[2,4,6]}},{"name":"e2_hard","height":6,"horizon":500,"goal":20,"E":{"0":[0,[0,1,2,3],10],"1":[6,[3,4,5,6],10]},"P":{"10":[1,3,3],"11":[5,3,4],"12":[0,3,2]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[2,4,6],"11":[1,3,5],"12":[2,4,6]}},{"name":"e3_hard","height":6,"horizon":500,"goal":30,"E":{"0":[0,[0,1,2,3,4],10],"1":[6,[2,4,5,6],10]},"P":{"10":[0,3,5],"11":[6,3,1],"12":[3,4,6]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[3,5,8,10],"11":[3,5,8,10],"12":[4,6,8,12]}},{"name":"e4_hard","height":5,"horizon":500,"goal":20,"E":{"0":[0,[0,1,2,3,4,5],7],"1":[5,[0,1,2,3,4,5],7]},"P":{"10":[0,5,5],"11":[0,5,3],"12":[5,5,0]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[2,4,6,8],"11":[2,4,6,8],"12":[2,4,6,8]}},{"name":"e5_hard","height":7,"horizon":500,"goal":25,"E":{"0":[0,[0,1,2,3,4],12],"1":[7,[3,4,5,6,7],12]},"P":{"10":[1,4,3],"11":[6,4,7],"12":[0,4,7]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[2,4,6],"11":[3,5,7],"12":[4,6,8,10]}},{"name":"m1_hard","height":6,"horizon":500,"goal":40,"E":{"0":[0,[0,1,2,3],12],"1":[6,[3,4,5,6],12]},"P":{"10":[0,4,5],"11":[5,4,0],"12":[2,4,6],"13":[5,4,1]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9,"13":0.9},"rw":{"10":[3,5,8],"11":[3,5,8],"12":[3,5,8],"13":[3,5,8]}},{"name":"m2_hard","height":8,"horizon":500,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,6],"13":[6,3,1]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9,"13":0.9},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[2,4,6,8],"13":[2,4,6,8]}},{"name":"m3_hard","height":8,"horizon":500,"goal":35,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[2,4,6,8],10],"2":[4,[2,7],10]},"P":{"10":[0,3,8],"11":[8,3,0],"12":[2,3,7],"13":[6,3,1]},"ep":{"0":0.95,"1":0.3,"2":0.4},"pp":{"10":0.9,"11":0.9,"12":0.9,"13":0.9},"rw":{"10":[3,5,7,10],"11":[3,5,7,10],"12":[4,6,8,10],"13":[2,4,6,8]}},{"name":"m4_hard","height":6,"horizon":500,"goal":30,"E":{"0":[0,[0,1,2,3,4,5,6],8],"1":[6,[0,1,2,3,4,5,6],8]},"P":{"10":[0,5,6],"11":[0,5,4],"12":[6,5,0],"13":[6,5,2],"14":[3,5,6]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9,"13":0.9,"14":0.9},"rw":{"10":[2,4,6],"11":[2,4,6],"12":[2,4,6],"13":[2,4,6],"14":[3,5,7]}},{"name":"m5_hard","height":8,"horizon":500,"goal":40,"E":{"0":[0,[0,1,2,3,4],10],"1":[4,[4,5,6,7,8],10]},"P":{"10":[0,6,8],"11":[0,4,5],"12":[8,6,0],"13":[8,5,3]},"ep":{"0":0.95,"1":0.3},"pp":{"10":0.9,"11":0.9,"12":0.9,"13":0.9},"rw":{"10":[4,6,8,10],"11":[3,5,7,9],"12":[4,6,8,10],"13":[3,5,7,9]}},{"name":"rl_hard","height":2,"horizon":500,"goal":5,"E":{"0":[0,[0,1,2],6]},"P":{"10":[0,3,1],"11":[0,3,2],"12":[2,3,0]},"ep":{"0":0.95},"pp":{"10":0.9,"11":0.9,"12":0.9},"rw":{"10":[50,50],"11":[1],"12":[1]}}];
+  const AIFINAL = {"p1_easy":770.1,"e1_easy":799.3,"e2_easy":657.3,"e3_easy":611.0,"e4_easy":909.5,"e5_easy":680.4,"m1_easy":552.9,"m2_easy":607.6,"m3_easy":620.9,"m4_easy":708.3,"m5_easy":604.6,"rl_easy":2119.8,"p1_med":1106.3,"e1_med":1141.7,"e2_med":947.7,"e3_med":870.3,"e4_med":1289.9,"e5_med":973.9,"m1_med":783.0,"m2_med":842.6,"m3_med":877.5,"m4_med":1017.1,"m5_med":855.6,"rl_med":3280.7,"p1_hard":971.6,"e1_hard":1462.0,"e2_hard":940.8,"e3_hard":992.7,"e4_hard":1479.4,"e5_hard":867.0,"m1_hard":855.3,"m2_hard":893.3,"m3_hard":836.8,"m4_hard":1307.4,"m5_hard":862.8,"rl_hard":4400.2};
+  const ECOL = ['var(--e0)', 'var(--e1)', 'var(--e2)', 'var(--e3)'];
+  const PCOL = ['var(--p0)', 'var(--p1)', 'var(--p2)', 'var(--p3)', 'var(--p4)', 'var(--p5)'];
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  const mk = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const a in attrs) n.setAttribute(a, attrs[a]); if (parent) parent.appendChild(n); return n; };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const DIFF = { easy: 'קל', med: 'בינוני', hard: 'קשה' };
+
+  // ================= configuration (the input) =================
+  let cfg = null;
+  function fromPreset(P) {
+    const c = { name: P.name, height: P.height, horizon: P.horizon, goal: P.goal, seed: 1, E: {}, P: {} };
+    for (const e in P.E) c.E[e] = { start: P.E[e][0], reach: P.E[e][1].slice().sort((a, b) => a - b), cap: P.E[e][2], p: P.ep[e] };
+    for (const p in P.P) c.P[p] = { start: P.P[p][0], w: P.P[p][1], goal: P.P[p][2], p: P.pp[p], rw: P.rw[p].slice() };
+    return c;
+  }
+  function blank() {
+    return { name: null, height: 5, horizon: 250, goal: 20, seed: 1,
+      E: { 0: { start: 0, reach: [0, 1, 2, 3, 4, 5], cap: 10, p: 0.9 } },
+      P: { 10: { start: 0, w: 4, goal: 4, p: 0.9, rw: [3, 5, 7] }, 11: { start: 5, w: 3, goal: 1, p: 0.9, rw: [2, 4] } } };
+  }
+  const eidsOf = c => Object.keys(c.E).map(Number).sort((a, b) => a - b);
+  const pidsOf = c => Object.keys(c.P).map(Number).sort((a, b) => a - b);
+  function toProblem(c) {
+    const pr = { height: c.height, horizon: c.horizon, goal_reward: c.goal, Elevators: {}, Persons: {},
+      elevator_chosen_action_prob: {}, person_chosen_action_prob: {}, persons_reward: {} };
+    for (const e of eidsOf(c)) { const E = c.E[e]; pr.Elevators[e] = [E.start, E.reach.slice(), E.cap]; pr.elevator_chosen_action_prob[e] = E.p; }
+    for (const p of pidsOf(c)) { const P = c.P[p]; pr.Persons[p] = [P.start, P.w, P.goal]; pr.person_chosen_action_prob[p] = P.p; pr.persons_reward[p] = P.rw.slice(); }
+    return pr;
+  }
+
+  // ---------- presets ----------
+  (function fillPresets() {
+    const sel = $('preset');
+    for (const d of ['easy', 'med', 'hard']) {
+      const g = document.createElement('optgroup'); g.label = DIFF[d];
+      PRESETS.filter(P => P.name.endsWith('_' + d)).forEach(P => { const o = document.createElement('option'); o.value = P.name; o.textContent = P.name; g.appendChild(o); });
+      sel.appendChild(g);
+    }
+    const o = document.createElement('option'); o.value = ''; o.textContent = 'מותאם אישית'; sel.appendChild(o);
+  })();
+  $('preset').addEventListener('change', e => { const P = PRESETS.find(x => x.name === e.target.value); if (P) { cfg = fromPreset(P); renderEditor(); } });
+  $('blank').addEventListener('click', () => { cfg = blank(); renderEditor(); });
+
+  function touched() { cfg.name = null; $('preset').value = ''; refreshAfterEdit(); }
+
+  // ---------- editor rendering ----------
+  function floorOptions(sel) { let h = ''; for (let f = 0; f <= cfg.height; f++) h += `<option value="${f}"${f === sel ? ' selected' : ''}>${f}</option>`; return h; }
+  function renderEditor() {
+    $('fHeight').value = cfg.height; $('fHorizon').value = cfg.horizon; $('fGoal').value = cfg.goal; $('fSeed').value = cfg.seed;
+    $('preset').value = cfg.name || '';
+    $('presetNote').textContent = cfg.name && AIFINAL[cfg.name] != null
+      ? `בבנצ'מרק בפייתון (30 הרצות) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : 'בניין שהגדרתם בעצמכם.';
+    const eids = eidsOf(cfg), pids = pidsOf(cfg);
+    let h = '';
+    eids.forEach((e, i) => {
+      const E = cfg.E[e];
+      let chips = '';
+      for (let f = 0; f <= cfg.height; f++) chips += `<button type="button" class="chip" data-e="${e}" data-f="${f}" aria-pressed="${E.reach.includes(f)}" aria-label="מעלית ${e} מגיעה לקומה ${f}">${f}</button>`;
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>מעלית ${e}
+          <button type="button" class="btn small x" data-del-e="${e}" ${eids.length < 2 ? 'disabled' : ''}>הסרה</button></div>
+        <div class="row">
+          <div class="field"><label for="es-${e}">קומת התחלה</label><select id="es-${e}" data-e-start="${e}">${floorOptions(E.start)}</select></div>
+          <div class="field"><label for="ec-${e}">קיבולת (ק״ג)</label><input id="ec-${e}" type="number" min="1" max="100" value="${E.cap}" data-e-cap="${e}"></div>
+        </div>
+        <div class="field">קומות שהמעלית מגיעה אליהן<div class="chips">${chips}</div></div></div>`;
+    });
+    $('elevList').innerHTML = h;
+    h = '';
+    pids.forEach((p, i) => {
+      const P = cfg.P[p];
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>אדם ${p}
+          <button type="button" class="btn small x" data-del-p="${p}" ${pids.length < 2 ? 'disabled' : ''}>הסרה</button></div>
+        <div class="row">
+          <div class="field"><label for="ps-${p}">קומת התחלה</label><select id="ps-${p}" data-p-start="${p}">${floorOptions(P.start)}</select></div>
+          <div class="field"><label for="pg-${p}">קומת יעד</label><select id="pg-${p}" data-p-goal="${p}">${floorOptions(P.goal)}</select></div>
+          <div class="field"><label for="pw-${p}">משקל</label><input id="pw-${p}" type="number" min="1" max="100" value="${P.w}" data-p-w="${p}"></div>
+        </div></div>`;
+    });
+    $('persList').innerHTML = h;
+    h = '';
+    eids.forEach((e, i) => {
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>מעלית ${e}</div>
+        <div class="prob"><label for="ep-${e}" class="muted" style="min-width:96px">הצלחת תנועה</label><input id="ep-${e}" type="range" min="0.05" max="1" step="0.05" value="${cfg.E[e].p}" data-e-p="${e}"><output>${Math.round(cfg.E[e].p * 100)}%</output></div></div>`;
+    });
+    pids.forEach((p, i) => {
+      const P = cfg.P[p];
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>אדם ${p}</div>
+        <div class="prob"><label for="pp-${p}" class="muted" style="min-width:96px">הצלחת כניסה/יציאה</label><input id="pp-${p}" type="range" min="0.05" max="1" step="0.05" value="${P.p}" data-p-p="${p}"><output>${Math.round(P.p * 100)}%</output></div>
+        <div class="field"><label for="pr-${p}">תגמולים אפשריים (מופרדים בפסיק)</label><input id="pr-${p}" type="text" value="${P.rw.join(', ')}" data-p-rw="${p}"></div></div>`;
+    });
+    $('hiddenList').innerHTML = h;
+    $('addElev').disabled = eids.length >= 4;
+    $('addPers').disabled = pids.length >= 6;
+    refreshAfterEdit(true);
+  }
+
+  // ---------- editor events (delegated) ----------
+  const clampInt = (v, lo, hi, d) => { v = parseInt(v, 10); return isNaN(v) ? d : Math.max(lo, Math.min(hi, v)); };
+  $('fHeight').addEventListener('change', e => {
+    const h = clampInt(e.target.value, 1, 12, cfg.height); cfg.height = h;
+    for (const id in cfg.E) { const E = cfg.E[id]; E.reach = E.reach.filter(f => f <= h); E.start = Math.min(E.start, h); if (!E.reach.includes(E.start)) E.reach.push(E.start); E.reach.sort((a, b) => a - b); }
+    for (const id in cfg.P) { const P = cfg.P[id]; P.start = Math.min(P.start, h); P.goal = Math.min(P.goal, h); }
+    cfg.name = null; renderEditor();
+  });
+  $('fHorizon').addEventListener('change', e => { cfg.horizon = clampInt(e.target.value, 10, 1000, cfg.horizon); e.target.value = cfg.horizon; touched(); });
+  $('fGoal').addEventListener('change', e => { cfg.goal = clampInt(e.target.value, 0, 1000, cfg.goal); e.target.value = cfg.goal; touched(); });
+  $('fSeed').addEventListener('change', e => { cfg.seed = clampInt(e.target.value, 0, 999999, cfg.seed); e.target.value = cfg.seed; refreshAfterEdit(); });
+  $('editor').addEventListener('click', e => {
+    const t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.f != null && t.dataset.e != null) {
+      const E = cfg.E[t.dataset.e], f = +t.dataset.f;
+      if (E.reach.includes(f)) { if (f === E.start || E.reach.length < 2) return; E.reach = E.reach.filter(x => x !== f); }
+      else E.reach = E.reach.concat(f).sort((a, b) => a - b);
+      t.setAttribute('aria-pressed', E.reach.includes(f)); touched();
+    } else if (t.dataset.delE != null) { delete cfg.E[t.dataset.delE]; cfg.name = null; renderEditor(); }
+    else if (t.dataset.delP != null) { delete cfg.P[t.dataset.delP]; cfg.name = null; renderEditor(); }
+  });
+  $('editor').addEventListener('change', e => {
+    const d = e.target.dataset, v = e.target.value;
+    if (d.eStart != null) { const E = cfg.E[d.eStart]; E.start = +v; if (!E.reach.includes(E.start)) E.reach = E.reach.concat(E.start).sort((a, b) => a - b); cfg.name = null; renderEditor(); return; }
+    if (d.eCap != null) { cfg.E[d.eCap].cap = clampInt(v, 1, 100, cfg.E[d.eCap].cap); e.target.value = cfg.E[d.eCap].cap; }
+    else if (d.pStart != null) cfg.P[d.pStart].start = +v;
+    else if (d.pGoal != null) cfg.P[d.pGoal].goal = +v;
+    else if (d.pW != null) { cfg.P[d.pW].w = clampInt(v, 1, 100, cfg.P[d.pW].w); e.target.value = cfg.P[d.pW].w; }
+    else if (d.pRw != null) { cfg.P[d.pRw].rw = v.split(/[,\s]+/).filter(Boolean).map(Number); }
+    else return;
+    touched();
+  });
+  $('editor').addEventListener('input', e => {
+    const d = e.target.dataset;
+    if (d.eP != null) { cfg.E[d.eP].p = +e.target.value; e.target.nextElementSibling.textContent = Math.round(cfg.E[d.eP].p * 100) + '%'; touched(); }
+    else if (d.pP != null) { cfg.P[d.pP].p = +e.target.value; e.target.nextElementSibling.textContent = Math.round(cfg.P[d.pP].p * 100) + '%'; touched(); }
+  });
+  $('addElev').addEventListener('click', () => {
+    const ids = eidsOf(cfg), id = ids.length ? Math.max(...ids) + 1 : 0;
+    const reach = []; for (let f = 0; f <= cfg.height; f++) reach.push(f);
+    cfg.E[id] = { start: 0, reach, cap: 10, p: 0.9 }; cfg.name = null; renderEditor();
+  });
+  $('addPers').addEventListener('click', () => {
+    const ids = pidsOf(cfg), id = ids.length ? Math.max(...ids) + 1 : 10;
+    cfg.P[id] = { start: 0, w: 4, goal: cfg.height, p: 0.9, rw: [3, 5, 7] }; cfg.name = null; renderEditor();
+  });
+
+  // ---------- validation ----------
+  function validate() {
+    const errs = [], warns = [];
+    const eids = eidsOf(cfg), pids = pidsOf(cfg);
+    // floors reachable through transfers (same idea as the controller's ecr)
+    const ecr = {};
+    for (const e of eids) {
+      const vis = new Set([e]), q = [e], fl = new Set(cfg.E[e].reach);
+      while (q.length) { const c = q.pop(); cfg.E[c].reach.forEach(f => fl.add(f)); for (const n of eids) if (!vis.has(n) && cfg.E[n].reach.some(f => cfg.E[c].reach.includes(f))) { vis.add(n); q.push(n); } }
+      ecr[e] = fl;
+    }
+    for (const p of pids) {
+      const P = cfg.P[p];
+      if (P.start === P.goal) errs.push(`אדם ${p}: קומת ההתחלה וקומת היעד זהות.`);
+      if (!P.rw.length || P.rw.some(x => !(x > 0) || !isFinite(x))) errs.push(`אדם ${p}: התגמולים חייבים להיות מספרים חיוביים.`);
+      const ok = eids.some(e => cfg.E[e].reach.includes(P.start) && ecr[e].has(P.goal) && cfg.E[e].cap >= P.w);
+      if (!ok) warns.push(`אדם ${p} לא יכול להגיע מקומה ${P.start} לקומה ${P.goal} בשום מסלול, אז אף סבב מלא לא יושלם.`);
+      if (eids.every(e => cfg.E[e].cap < P.w)) warns.push(`אדם ${p} כבד מכל המעליות.`);
+    }
+    if (pids.length >= 5) warns.push('עם 5–6 אנשים החיפוש כבד יותר, והריצה עלולה להיות איטית.');
+    return { errs, warns };
+  }
+
+  let lastIssues = { errs: [] };
+  function refreshAfterEdit(full) {
+    lastIssues = validate();
+    $('issues').innerHTML = lastIssues.errs.map(t => `<li class="err">${esc(t)}</li>`).join('') + lastIssues.warns.map(t => `<li class="warn">${esc(t)}</li>`).join('')
+      || '<li class="warn">הקלט תקין. אפשר להריץ.</li>';
+    $('runBtn').disabled = lastIssues.errs.length > 0;
+    drawInitial();
+  }
+
+  // ================= scene =================
+  let geo = null, nodes = null, sceneCfg = null;
+  function buildScene(c) {
+    sceneCfg = c;
+    const svg = $('svg'); svg.innerHTML = '';
+    const eids = eidsOf(c), pids = pidsOf(c);
+    const floors = c.height + 1, rowH = 62, top = 70, labelW = 40, lobbyW = 52 * Math.max(3, pids.length) + 34, shaftW = 92, gap = 14;
+    const W = labelW + lobbyW + gap + eids.length * (shaftW + gap) + 4, H = top + floors * rowH + 30;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const yOf = f => top + (c.height - f) * rowH;
+    const shaftX = i => labelW + lobbyW + gap + i * (shaftW + gap);
+    geo = { rowH, top, labelW, lobbyW, shaftW, yOf, shaftX, W, H, eids, pids };
+    mk('rect', { x: 0, y: 0, width: W, height: H, style: 'fill:var(--wall)' }, svg);
+    mk('rect', { x: labelW - 6, y: top - 14, width: W - labelW + 2, height: 8, rx: 2, style: 'fill:var(--slab)' }, svg);
+    mk('rect', { x: 0, y: yOf(0) + rowH, width: W, height: 30, style: 'fill:var(--slab);opacity:.45' }, svg);
+    for (let f = 0; f <= c.height; f++) {
+      const y = yOf(f);
+      for (let wx = labelW + 14; wx < labelW + lobbyW - 30; wx += 58) mk('rect', { x: wx, y: y + 10, width: 30, height: 20, rx: 3, style: 'fill:var(--wall-2)' }, svg);
+      mk('rect', { x: labelW - 6, y: y + rowH - 5, width: W - labelW + 2, height: 6, style: 'fill:var(--slab)' }, svg);
+      const t = mk('text', { x: labelW - 12, y: y + rowH / 2 + 8, 'text-anchor': 'end', style: 'fill:var(--muted);font:21px var(--font-led)' }, svg); t.textContent = f;
+    }
+    const goalsAt = {};
+    pids.forEach((p, i) => (goalsAt[c.P[p].goal] ||= []).push(i));
+    for (const f in goalsAt) goalsAt[f].forEach((ci, j) => {
+      const x = labelW + lobbyW - 12 - j * 12, y = yOf(+f) + 12;
+      mk('line', { x1: x, y1: y, x2: x, y2: y + rowH - 18, style: 'stroke:var(--muted);stroke-width:1.5' }, svg);
+      mk('path', { d: `M${x},${y} l-9,4 l9,4 z`, style: `fill:${PCOL[ci % 6]}` }, svg);
+    });
+    nodes = { cars: {}, leds: {}, targets: {}, persons: {}, fx: null };
+    eids.forEach((e, i) => {
+      const x = shaftX(i), col = ECOL[i % 4], R = c.E[e].reach;
+      mk('rect', { x, y: top - 6, width: shaftW, height: floors * rowH + 1, style: 'fill:var(--shaft)' }, svg);
+      for (let f = 0; f <= c.height; f++) {
+        const y = yOf(f);
+        if (R.includes(f)) mk('rect', { x: x - 4, y: y + 8, width: 4, height: rowH - 18, style: `fill:${col}` }, svg);
+        else {
+          mk('rect', { x: x + 6, y: y + 4, width: shaftW - 12, height: rowH - 12, style: 'fill:var(--shaft-2)' }, svg);
+          mk('line', { x1: x + 10, y1: y + 8, x2: x + shaftW - 10, y2: y + rowH - 12, style: 'stroke:var(--shaft);stroke-width:2' }, svg);
+        }
+      }
+      nodes.targets[e] = mk('rect', { x: x - 1, y: 0, width: shaftW + 2, height: rowH - 4, rx: 7, style: 'fill:none;stroke:var(--led);stroke-width:2.5;stroke-dasharray:6 4', visibility: 'hidden' }, svg);
+      const cable = mk('line', { x1: x + shaftW / 2, x2: x + shaftW / 2, y1: top - 6, y2: top, style: 'stroke:var(--slab);stroke-width:2' }, svg);
+      mk('rect', { x: x + 12, y: 8, width: shaftW - 24, height: 34, rx: 5, style: 'fill:var(--led-bg)' }, svg);
+      const led = mk('text', { x: x + shaftW / 2, y: 34, 'text-anchor': 'middle', style: 'fill:var(--led);font:24px var(--font-led)' }, svg);
+      const lbl = mk('text', { x: x + shaftW / 2, y: 58, 'text-anchor': 'middle', style: `fill:${col};font:600 13px var(--font-body)` }, svg); lbl.textContent = `מעלית ${e}`;
+      const car = mk('g', { class: 'car' }, svg);
+      mk('rect', { class: 'cab', x: x + 6, y: 5, width: shaftW - 12, height: rowH - 16, rx: 4, style: 'fill:var(--surface)' }, car);
+      mk('rect', { class: 'door l', x: x + 8, y: 7, width: shaftW / 2 - 8, height: rowH - 20, style: `fill:${col};opacity:.3` }, car);
+      mk('rect', { class: 'door r', x: x + shaftW / 2, y: 7, width: shaftW / 2 - 8, height: rowH - 20, style: `fill:${col};opacity:.3` }, car);
+      mk('rect', { x: x + 6, y: 5, width: shaftW - 12, height: rowH - 16, rx: 4, style: `fill:none;stroke:${col};stroke-width:3` }, car);
+      const load = mk('text', { x: x + shaftW / 2, y: rowH - 14, 'text-anchor': 'middle', style: 'fill:var(--muted);font:10px var(--font-led)' }, car);
+      nodes.cars[e] = { g: car, load, cable }; nodes.leds[e] = led;
+    });
+    pids.forEach((p, i) => {
+      const col = PCOL[i % 6], g = mk('g', { class: 'person' }, svg);
+      const ring = mk('circle', { cx: 0, cy: -22, r: 22, style: 'fill:none;stroke:var(--led);stroke-width:3', visibility: 'hidden' }, g);
+      mk('rect', { x: -9, y: -26, width: 18, height: 22, rx: 7, style: `fill:${col}` }, g);
+      mk('circle', { cx: 0, cy: -33, r: 7.5, style: `fill:${col}` }, g);
+      mk('rect', { x: -7, y: -5, width: 5, height: 6, rx: 1.5, style: `fill:${col}` }, g);
+      mk('rect', { x: 2, y: -5, width: 5, height: 6, rx: 1.5, style: `fill:${col}` }, g);
+      const wt = mk('text', { x: 0, y: -14, 'text-anchor': 'middle', style: 'fill:#fff;font:600 9px var(--font-led)' }, g); wt.textContent = c.P[p].w;
+      const tag = mk('g', {}, g);
+      mk('rect', { x: -22, y: -60, width: 44, height: 17, rx: 8, style: `fill:var(--surface);stroke:${col};stroke-width:1.5` }, tag);
+      const tt = mk('text', { x: 0, y: -47.5, 'text-anchor': 'middle', style: 'fill:var(--ink);font:12px var(--font-led)' }, tag); tt.textContent = `${p}→${c.P[p].goal}`;
+      nodes.persons[p] = { g, tag, ring };
+    });
+    nodes.fx = mk('g', {}, svg);
+  }
+
+  function placeScene(state, hl) {
+    const { yOf, rowH, labelW, shaftW, eids, pids } = geo, c = sceneCfg;
+    const ef = {}, el = {};
+    state.e.forEach(([e, f, w]) => { ef[e] = f; el[e] = w; });
+    eids.forEach(e => {
+      const n = nodes.cars[e];
+      n.g.style.transform = `translate(0px, ${yOf(ef[e])}px)`;
+      n.load.textContent = `${el[e]}/${c.E[e].cap}`;
+      n.cable.setAttribute('y2', yOf(ef[e]) + 5);
+      nodes.leds[e].textContent = String(ef[e]);
+      nodes.targets[e].setAttribute('visibility', 'hidden');
+    });
+    const where = {}, onFloor = {}, inCar = {};
+    state.p.forEach(([p, k, v]) => { where[p] = [k, v]; if (k === 'floor') (onFloor[v] ||= []).push(p); else (inCar[v] ||= []).push(p); });
+    pids.forEach(p => {
+      const n = nodes.persons[p], w = where[p];
+      let x, y, sc = 1, op = 1, tag = true;
+      if (!w) { x = labelW + geo.lobbyW - 40; y = yOf(c.P[p].goal) + rowH - 6; op = 0; }
+      else if (w[0] === 'floor') { const j = onFloor[w[1]].indexOf(p); x = labelW + 30 + j * 52; y = yOf(w[1]) + rowH - 6; }
+      else { const list = inCar[w[1]], j = list.indexOf(p), ei = eids.indexOf(w[1]); x = geo.shaftX(ei) + shaftW / 2 + (j - (list.length - 1) / 2) * 17; y = yOf(ef[w[1]]) + rowH - 14; sc = 0.62; tag = false; }
+      n.g.style.transform = `translate(${x}px, ${y}px) scale(${sc})`;
+      n.g.style.opacity = op; n.tag.style.display = tag ? '' : 'none';
+      n.ring.setAttribute('visibility', 'hidden');
+    });
+    if (hl && hl !== 'RESET') {
+      const m = hl.match(/\{(-?\d+),(-?\d+)\}/), a = +m[1], b = +m[2];
+      if (hl.startsWith('MOVE')) { const r = nodes.targets[a]; if (r) { r.setAttribute('y', yOf(b) + 1); r.setAttribute('visibility', 'visible'); } }
+      else if (nodes.persons[a]) nodes.persons[a].ring.setAttribute('visibility', 'visible');
+    }
+  }
+
+  function initialState(c) {
+    return { e: eidsOf(c).map(e => [e, c.E[e].start, 0]), p: pidsOf(c).map(p => [p, 'floor', c.P[p].start]), rem: pidsOf(c).length };
+  }
+  function drawInitial() { if (mode !== 'edit') return; buildScene(cfg); placeScene(initialState(cfg)); resetHud(); }
+  function resetHud() { $('hR').textContent = '0'; $('hRand').textContent = '–'; $('hStep').innerHTML = `0<small>/${cfg.horizon}</small>`; $('hDel').textContent = '0 · 0'; }
+
+  // ================= worker =================
+  const WORKER_MAIN = `
+  function randomAction(g, rng) {
+    const st = g.state, acts = ['RESET'];
+    for (const [e, f] of st.e) for (const t of g.reach[e]) if (t !== f) acts.push('MOVE{' + e + ',' + t + '}');
+    for (const [p, k, v] of st.p) { if (k !== 'floor') continue; for (const [e, f, w] of st.e) if (f === v && w + g.pw[p] <= g.cap[e]) acts.push('ENTER{' + p + ',' + e + '}'); }
+    for (const [p, k, v] of st.p) if (k === 'in') acts.push('EXIT{' + p + ',' + v + '}');
+    return acts[Math.floor(rng() * acts.length)];
+  }
+  const r2 = x => Math.round(x * 1000) / 1000;
+  function runOne(problem, seed, record, post) {
+    const g = new Engine(problem, seed), c = new Controller(g);
+    const gr = new Engine(problem, seed), rrng = mulberry32((seed ^ 0x5bd1e995) >>> 0);
+    let buf = [], deliveries = 0, rounds = 0;
+    for (let i = 0; i < g.maxSteps; i++) {
+      const before = g.state;
+      const a = c.choose_next_action(before);
+      const strat = c._strategy, lp = c._loop_pid, replanned = c.lastReplanned;
+      const b = record ? c.beliefs() : null, plan = record ? c.upcoming(5) : null;
+      const o = g.submit(a);
+      gr.submit(randomAction(gr, rrng));
+      if (o.delivered) deliveries++; if (o.goal) rounds++;
+      if (record) {
+        for (const k of ['ep', 'pp', 'rw']) for (const id in b[k]) b[k][id] = r2(b[k][id]);
+        buf.push({ s: before, a, o, g: g.lastGained, R: g.reward, rR: gr.reward, st: strat, lp, rp: replanned, b, plan, d: deliveries, rd: rounds });
+        if (buf.length >= 20) { post({ type: 'chunk', steps: buf }); buf = []; }
+      }
+    }
+    if (record) post({ type: 'chunk', steps: buf });
+    return { total: g.reward, rand: gr.reward, final: g.state, deliveries, rounds };
+  }
+  onmessage = ev => {
+    const m = ev.data;
+    try {
+      if (m.cmd === 'run') { const r = runOne(m.problem, m.seed, true, x => postMessage(x)); postMessage({ type: 'done', final: r.final, total: r.total, rand: r.rand }); }
+      else if (m.cmd === 'bench') {
+        let a = 0, b = 0; const n = 10;
+        for (let s = 0; s < n; s++) { const r = runOne(m.problem, m.seed + 1000 + s, false); a += r.total; b += r.rand; postMessage({ type: 'benchProgress', i: s + 1 }); }
+        postMessage({ type: 'bench', ai: a / n, rand: b / n });
+      }
+    } catch (err) { postMessage({ type: 'error', msg: String(err && err.message || err) }); }
+  };`;
+  let worker = null;
+  function makeWorker() {
+    if (worker) worker.terminate();
+    const src = $('core').textContent + '\n' + WORKER_MAIN;
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    worker.onmessage = onWorker;
+  }
+
+  // ================= run + playback =================
+  let mode = 'edit', run = null, k = 0, playing = false, timer = null;
+  function setMode(m) {
+    mode = m;
+    $('editor').hidden = m !== 'edit'; $('mind').hidden = m !== 'run';
+    $('controls').hidden = $('chartCard').hidden = $('logCard').hidden = m !== 'run';
+    $('editNote').hidden = m !== 'edit';
+    $('stepEdit').classList.toggle('on', m === 'edit'); $('stepRun').classList.toggle('on', m === 'run');
+  }
+
+  $('runBtn').addEventListener('click', startRun);
+  $('backBtn').addEventListener('click', () => { stop(); if (worker) worker.terminate(); worker = null; run = null; setMode('edit'); drawInitial(); });
+
+  function startRun() {
+    if (lastIssues.errs.length) return;
+    const runCfg = JSON.parse(JSON.stringify(cfg));
+    run = { cfg: runCfg, problem: toProblem(runCfg), steps: [], done: false, final: null };
+    setMode('run');
+    $('benchOut').hidden = true; $('benchBtn').disabled = false;
+    buildScene(runCfg); placeScene(initialState(runCfg));
+    buildBeliefs(); k = 0; $('scrub').max = 0;
+    banner('הבקר מתחיל בלי לדעת כלום על העולם', '');
+    try { makeWorker(); worker.postMessage({ cmd: 'run', problem: run.problem, seed: runCfg.seed }); }
+    catch (err) { banner('הדפדפן לא מאפשר להריץ את החישוב ברקע', 'bad'); return; }
+    play();
+  }
+
+  function onWorker(ev) {
+    const m = ev.data;
+    if (!run) return;
+    if (m.type === 'chunk') { run.steps.push(...m.steps); $('scrub').max = Math.max(0, run.steps.length - 1); drawChart(); if (!playing && run.steps.length === m.steps.length) show(0); }
+    else if (m.type === 'done') { run.done = true; run.final = m.final; run.total = m.total; run.rand = m.rand; drawChart(); updateStepNo(); }
+    else if (m.type === 'benchProgress') { $('benchOut').hidden = false; $('benchOut').textContent = `מריץ… ${m.i}/10`; }
+    else if (m.type === 'bench') {
+      const ratio = m.rand > 0 ? `, פי ${(m.ai / m.rand).toFixed(m.ai / m.rand >= 10 ? 0 : 1)}` : '';
+      $('benchOut').hidden = false;
+      $('benchOut').innerHTML = `ממוצע על 10 seeds: <b>הבקר שלך ${Math.round(m.ai)}</b> מול מדיניות אקראית ${Math.round(m.rand)}${ratio}.`;
+      $('benchBtn').disabled = false;
+    } else if (m.type === 'error') banner('שגיאה בריצה: ' + m.msg, 'bad');
+  }
+  $('benchBtn').addEventListener('click', () => {
+    if (!run) return;
+    $('benchBtn').disabled = true; $('benchOut').hidden = false; $('benchOut').textContent = 'מריץ… 0/10';
+    const w = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + WORKER_MAIN], { type: 'text/javascript' })));
+    w.onmessage = ev => { onWorker(ev); if (ev.data.type === 'bench' || ev.data.type === 'error') w.terminate(); };
+    w.postMessage({ cmd: 'bench', problem: run.problem, seed: run.cfg.seed });
+  });
+
+  function speed() { return +$('speed').value; }
+  function play() {
+    playing = true; $('play').textContent = 'עצור';
+    document.documentElement.style.setProperty('--dur', Math.min(300, Math.round(900 / speed())) + 'ms');
+    clearInterval(timer);
+    timer = setInterval(tick, 1000 / speed());
+  }
+  function stop() { playing = false; $('play').textContent = 'נגן'; clearInterval(timer); timer = null; }
+  function tick() {
+    if (!run) return stop();
+    if (k < run.steps.length - 1) show(k + 1);
+    else if (run.done && k === run.steps.length - 1) { showFinal(); stop(); }
+  }
+  $('play').addEventListener('click', () => {
+    if (playing) return stop();
+    if (run && run.done && k >= run.steps.length - 1) show(0);
+    play();
+  });
+  $('prev').addEventListener('click', () => { stop(); if (run && run.steps.length) show(Math.max(0, k - 1)); });
+  $('next').addEventListener('click', () => { stop(); if (run && run.steps.length) show(Math.min(run.steps.length - 1, k + 1)); });
+  $('scrub').addEventListener('input', e => { stop(); show(+e.target.value); });
+  $('speed').addEventListener('change', () => { if (playing) play(); });
+
+  let shownFinal = false;
+  function show(i) {
+    if (!run || !run.steps[i]) return;
+    const prevK = k; k = i; shownFinal = false;
+    const st = run.steps[i];
+    placeScene(st.s, st.a);
+    // effects for the action that produced this frame (step i-1), when moving forward by one
+    if (i === prevK + 1) effectsFor(run.steps[i - 1]);
+    placeMind(i); updateHud(i); updateStepNo(); moveCursor(i); renderLog(i);
+    $('scrub').value = i;
+  }
+  function showFinal() {
+    if (!run || !run.final) return;
+    const last = run.steps[run.steps.length - 1];
+    placeScene(run.final, null); effectsFor(last); shownFinal = true;
+    $('hR').textContent = Math.round(run.total); $('hRand').textContent = Math.round(run.rand);
+    $('hStep').innerHTML = `${run.steps.length}<small>/${run.cfg.horizon}</small>`;
+    $('hDel').textContent = `${last.d} · ${last.rd}`;
+    banner(`הריצה הסתיימה: ${Math.round(run.total)} מול ${Math.round(run.rand)} של מדיניות אקראית`, 'good');
+  }
+  function effectsFor(st) {
+    if (!st) return;
+    const o = st.o;
+    if (o.kind === 'move' && !o.ok) {
+      const m = st.a.match(/\{(-?\d+),/), c = nodes.cars[+m[1]];
+      if (c) { c.g.classList.remove('flash'); void c.g.getBBox(); c.g.classList.add('flash'); }
+      banner(o.landed === o.from ? `מעלית ${m[1]} נתקעה במקום` : `מעלית ${m[1]} נחתה בקומה ${o.landed} במקום ${o.to}`, 'bad');
+    } else if (o.kind === 'enter' || o.kind === 'exit') {
+      const e = +st.a.match(/,(-?\d+)\}/)[1], c = nodes.cars[e];
+      if (c && o.ok) { c.g.classList.add('open'); setTimeout(() => c.g.classList.remove('open'), 380); }
+      if (o.delivered) {
+        const t = mk('text', { class: 'float', x: geo.labelW + geo.lobbyW - 60, y: geo.yOf(o.floor) + 30, 'text-anchor': 'middle' }, nodes.fx);
+        t.textContent = '+' + o.r; setTimeout(() => t.remove(), 1200);
+        if (o.goal) banner(`סבב מלא! +${run.cfg.goal} בונוס, והבניין חוזר להתחלה`, 'good');
+      } else if (!o.ok) banner(o.kind === 'enter' ? 'האדם לא נכנס, הבקר ינסה שוב' : 'האדם לא יצא, הבקר ינסה שוב', 'bad');
+    } else if (o.kind === 'reset') banner('RESET: חזרה למצב ההתחלתי', '');
+  }
+
+  function updateHud(i) {
+    const st = run.steps[i], prev = i > 0 ? run.steps[i - 1] : null;
+    $('hR').textContent = prev ? Math.round(prev.R) : 0;
+    $('hRand').textContent = prev ? Math.round(prev.rR) : 0;
+    $('hStep').innerHTML = `${i}<small>/${run.cfg.horizon}</small>`;
+    $('hDel').textContent = prev ? `${prev.d} · ${prev.rd}` : '0 · 0';
+  }
+  function updateStepNo() {
+    if (!run) return;
+    const n = run.steps.length, tot = run.cfg.horizon;
+    $('stepno').textContent = run.done ? `${shownFinal ? n : k + 1}/${n}` : `${k + 1}/${n} · מחשב ${Math.round(n / tot * 100)}%`;
+  }
+
+  // ---------- mind panel ----------
+  function actionHe(a) {
+    if (a === 'RESET') return 'איפוס להתחלה';
+    const m = a.match(/\{(-?\d+),(-?\d+)\}/), x = m[1], y = m[2];
+    if (a.startsWith('MOVE')) return `מעלית ${x} לקומה ${y}`;
+    if (a.startsWith('ENTER')) return `אדם ${x} נכנס למעלית ${y}`;
+    return `אדם ${x} יוצא ממעלית ${y}`;
+  }
+  function placeMind(i) {
+    const st = run.steps[i], o = st.o;
+    $('actHe').textContent = actionHe(st.a); $('actRaw').textContent = st.a;
+    const pill = $('actOut');
+    if (o.kind === 'reset') { pill.className = 'pill amber'; pill.textContent = 'איפוס'; }
+    else if (o.delivered) { pill.className = 'pill ok'; pill.textContent = `הגיע ליעד · +${o.r}`; }
+    else if (o.ok) { pill.className = 'pill ok'; pill.textContent = 'יצליח'; }
+    else { pill.className = 'pill bad'; pill.textContent = 'ייכשל'; }
+    let why = '';
+    if (st.a === 'RESET' && st.st === 'loop') why = `באסטרטגיית loop הבקר מאפס כדי להתחיל שוב מהמצב ההתחלתי ולהעביר את אדם ${st.lp}.`;
+    else if (st.rp) why = 'המציאות לא תאמה את התוכנית (או שהגיע זמן רענון), אז הבקר תכנן מסלול חדש לפי מה שלמד עד עכשיו.';
+    else why = 'הבקר ממשיך בתוכנית הקיימת, כי המצב תואם את מה שציפה לו.';
+    $('actWhy').textContent = why;
+    const sp = $('stratPill'), stx = $('stratText');
+    if (st.st === 'loop') { sp.className = 'pill amber'; sp.textContent = 'loop'; stx.textContent = `משתלם יותר להעביר רק את אדם ${st.lp} שוב ושוב`; }
+    else { sp.className = 'pill neutral'; sp.textContent = 'full'; stx.textContent = 'מעבירים את כולם בשביל הבונוס'; }
+    const plan = $('plan'); plan.innerHTML = '';
+    const list = st.a === 'RESET' ? [] : [st.a].concat(st.plan);
+    list.slice(0, 6).forEach(a => { const s = document.createElement('span'); s.textContent = a; plan.appendChild(s); });
+    if (!list.length) plan.innerHTML = '<span class="muted" style="background:none;border:0">אין תוכנית פעילה</span>';
+    placeBeliefs(st.b);
+  }
+  let rwMax = 1;
+  function buildBeliefs() {
+    const c = run.cfg, eids = eidsOf(c), pids = pidsOf(c);
+    rwMax = Math.max(1, c.goal, ...pids.flatMap(p => c.P[p].rw));
+    let h = '<thead><tr><th>מי</th><th>מה נמדד</th><th style="width:36%">אומדן מול אמת</th><th>ערך</th></tr></thead><tbody>';
+    eids.forEach((e, i) => {
+      h += `<tr><td><span class="who"><i class="dot" style="background:${ECOL[i % 4]}"></i>E${e}</span></td><td>תנועה</td>
+        <td><div class="bar"><i id="be-${e}"></i><b style="left:${c.E[e].p * 100}%"></b></div></td><td class="num" id="bn-e${e}"></td></tr>`;
+    });
+    pids.forEach((p, i) => {
+      const mean = c.P[p].rw.reduce((a, b) => a + b, 0) / c.P[p].rw.length;
+      h += `<tr><td rowspan="2"><span class="who"><i class="dot" style="background:${PCOL[i % 6]}"></i>${p}</span></td><td>כניסה/יציאה</td>
+        <td><div class="bar"><i id="bp-${p}"></i><b style="left:${c.P[p].p * 100}%"></b></div></td><td class="num" id="bn-p${p}"></td></tr>
+        <tr><td>תגמול</td><td><div class="bar"><i id="br-${p}"></i><b style="left:${Math.min(100, mean / rwMax * 100)}%"></b></div></td><td class="num" id="bn-r${p}" data-t="${mean.toFixed(1)}"></td></tr>`;
+    });
+    $('bel').innerHTML = h + '</tbody>';
+  }
+  function placeBeliefs(b) {
+    const c = run.cfg;
+    for (const e in b.ep) { $('be-' + e).style.width = b.ep[e] * 100 + '%'; $('bn-e' + e).innerHTML = `${Math.round(b.ep[e] * 100)}% <small>/ ${Math.round(c.E[e].p * 100)}% · n=${b.en[e]}</small>`; }
+    for (const p in b.pp) {
+      $('bp-' + p).style.width = b.pp[p] * 100 + '%';
+      $('bn-p' + p).innerHTML = `${Math.round(b.pp[p] * 100)}% <small>/ ${Math.round(c.P[p].p * 100)}% · n=${b.pn[p]}</small>`;
+      $('br-' + p).style.width = Math.min(100, b.rw[p] / rwMax * 100) + '%';
+      const cell = $('bn-r' + p); cell.innerHTML = `${b.rw[p].toFixed(1)} <small>/ ${cell.dataset.t} · n=${b.rn[p]}</small>`;
+    }
+  }
+
+  // ---------- chart ----------
+  let cx = null;
+  function drawChart() {
+    const svg = $('chart'), steps = run.steps, H = run.cfg.horizon;
+    svg.innerHTML = '';
+    if (!steps.length) return;
+    const L = 46, R = 630, T = 12, B = 164;
+    const maxR = Math.max(1, ...steps.map(s => Math.max(s.R, s.rR)));
+    const ns = niceStep(maxR / 4), yMax = Math.ceil(maxR / ns) * ns;
+    const X = i => L + (R - L) * i / Math.max(1, H - 1), Y = v => B - (B - T) * v / yMax;
+    let s0 = null;
+    steps.forEach((s, i) => {
+      const lp = s.st === 'loop';
+      if (lp && s0 === null) s0 = i;
+      if ((!lp || i === steps.length - 1) && s0 !== null) { mk('rect', { x: X(s0), y: T, width: Math.max(1, X(i) - X(s0)), height: B - T, style: 'fill:var(--amber-soft)' }, svg); s0 = null; }
+    });
+    for (let v = 0; v <= yMax + 1e-9; v += ns) {
+      mk('line', { x1: L, x2: R, y1: Y(v), y2: Y(v), style: 'stroke:var(--line);stroke-width:1' }, svg);
+      const t = mk('text', { x: L - 6, y: Y(v) + 4, 'text-anchor': 'end', style: 'fill:var(--muted);font:11px var(--font-led)' }, svg); t.textContent = Math.round(v);
+    }
+    const tickStep = niceStep(H / 5);
+    for (let i = 0; i <= H; i += tickStep) { const t = mk('text', { x: X(Math.min(i, H - 1)), y: B + 16, 'text-anchor': 'middle', style: 'fill:var(--muted);font:11px var(--font-led)' }, svg); t.textContent = i; }
+    steps.forEach((s, i) => { if (s.o.goal) mk('line', { x1: X(i), x2: X(i), y1: B - 7, y2: B, style: 'stroke:var(--ok);stroke-width:2' }, svg); });
+    const path = key => steps.map((s, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(s[key]).toFixed(1)).join('');
+    mk('path', { d: path('rR'), style: 'fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3' }, svg);
+    mk('path', { d: path('R'), style: 'fill:none;stroke:var(--led);stroke-width:2.2' }, svg);
+    cx = { line: mk('line', { y1: T, y2: B, style: 'stroke:var(--ink);stroke-width:1.2' }, svg), X, L, R, H };
+    moveCursor(k);
+    svg.onclick = ev => {
+      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY;
+      const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+      const i = Math.round((loc.x - L) / (R - L) * (H - 1));
+      stop(); show(Math.max(0, Math.min(run.steps.length - 1, i)));
+    };
+  }
+  function moveCursor(i) { if (cx) { cx.line.setAttribute('x1', cx.X(i)); cx.line.setAttribute('x2', cx.X(i)); } }
+  function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const n = raw / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+
+  function renderLog(i) {
+    let h = '';
+    for (let j = Math.max(0, i - 9); j < i; j++) {
+      const s = run.steps[j], o = s.o;
+      const cls = o.kind === 'reset' ? 'amber' : o.ok ? 'ok' : 'bad';
+      const txt = o.kind === 'reset' ? 'איפוס' : o.delivered ? `+${o.r}` : o.ok ? 'הצליח' : (o.kind === 'move' ? `נחתה ב-${o.landed}` : 'נכשל');
+      h = `<li><span class="t">#${j + 1}</span><span>${actionHe(s.a)}</span><span class="r"><span class="pill ${cls}">${txt}</span></span></li>` + h;
+    }
+    $('log').innerHTML = h || '<li class="muted">עוד לא בוצעו פעולות.</li>';
+  }
+
+  let bannerT = null;
+  function banner(msg, kind) {
+    const b = $('banner'); b.textContent = msg; b.className = 'banner ' + (kind || ''); b.style.opacity = 1;
+    clearTimeout(bannerT); bannerT = setTimeout(() => { b.style.opacity = 0; }, 2200);
+  }
+
+  // keyboard: space play/pause, arrows step (only in run mode)
+  document.addEventListener('keydown', e => {
+    if (mode !== 'run' || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.code === 'Space') { e.preventDefault(); $('play').click(); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); $('next').click(); }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); $('prev').click(); }
+  });
+
+  // ---------- boot ----------
+  cfg = fromPreset(PRESETS.find(P => P.name === 'e5_hard'));
+  setMode('edit');
+  renderEditor();
+})();
+</script>
+
+</body>
+</html>
