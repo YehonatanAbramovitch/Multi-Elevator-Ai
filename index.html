@@ -227,7 +227,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 
         <div class="card">
           <div class="field" style="margin-bottom:6px"><span>מתי הריצה נגמרת</span>
-            <div class="seg" id="modeSeg" role="group" aria-label="מתי הריצה נגמרת"><button type="button" data-m="single" aria-pressed="true">כשכולם הגיעו ליעד</button><button type="button" data-m="full" aria-pressed="false">כמו במטלה: כשנגמרים הצעדים</button></div>
+            <div class="seg" id="modeSeg" role="group" aria-label="מתי הריצה נגמרת"><button type="button" data-m="single" aria-pressed="true">כשכולם הגיעו ליעד</button><button type="button" data-m="full" aria-pressed="false">כשנגמרים הצעדים</button></div>
           </div>
           <p class="muted" id="modeNote" style="margin:0 0 10px"></p>
           <ul class="issues" id="issues"></ul>
@@ -884,7 +884,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     $('fHeight').value = cfg.height; $('fHorizon').value = cfg.horizon; $('fGoal').value = cfg.goal; $('fSeed').value = cfg.seed;
     $('preset').value = cfg.name || '';
     $('presetNote').textContent = cfg.name && AIFINAL[cfg.name] != null && runMode === 'full'
-      ? `בבנצ'מרק בפייתון (30 הרצות, במצב של המטלה) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : (cfg.name ? `בעיה ${cfg.name} מתוך המטלה.` : 'בניין שהגדרתם בעצמכם.');
+      ? `בבנצ'מרק בפייתון (30 הרצות, עד שנגמרים הצעדים) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : (cfg.name ? `בעיה ${cfg.name} מתוך המטלה.` : 'בניין שהגדרתם בעצמכם.');
     const eids = eidsOf(cfg), pids = pidsOf(cfg);
     let h = '';
     eids.forEach((e, i) => {
@@ -1432,7 +1432,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === runMode));
     $('modeNote').textContent = runMode === 'single'
       ? 'הריצה עוצרת ברגע שכולם הגיעו ליעד. במצב הזה הבקר לא משתמש באסטרטגיית loop ולא מאפס, כי בסבב אחד אין לזה טעם. כל השאר זהה לאלגוריתם.'
-      : 'כמו במטלה: אחרי שכולם הגיעו הבניין מתאפס והבקר ממשיך לצבור תגמול עד שנגמרים הצעדים, כולל אסטרטגיית loop. זה האלגוריתם בדיוק כפי שנכתב.';
+      : 'אחרי שכולם הגיעו הבניין מתאפס והבקר ממשיך לצבור תגמול עד שנגמרים הצעדים, כולל אסטרטגיית loop. זה האלגוריתם בדיוק כפי שנכתב.';
     if (cfg) renderEditor();
   }
   $('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; runMode = b.dataset.m; syncMode(); });
