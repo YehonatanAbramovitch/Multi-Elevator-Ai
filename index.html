@@ -341,7 +341,7 @@ html.fit .chip { height: 24px; min-width: 26px; }
       <div class="card chart" id="chartCard">
         <h3>Cumulative reward · click to jump to a step</h3>
         <svg id="chart" viewBox="0 0 400 166" aria-label="Cumulative reward chart"></svg>
-        <div class="legend"><span><i class="sw"></i>Your controller</span><span><i class="sw" style="background:var(--muted)"></i>Random policy</span><span><i class="sw" style="background:var(--amber-soft)"></i>Loop periods</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>Full round</span></div>
+        <div class="legend"><span><i class="sw"></i>Your controller</span><span id="legLoop"><i class="sw" style="background:var(--amber-soft)"></i>Loop periods</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>Full round</span></div>
       </div>
       <div class="card" id="learnCard">
         <h3>Learning over time · how far the estimates are from the truth</h3>
@@ -1269,6 +1269,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     if (lastIssues.errs.length) return;
     const runCfg = JSON.parse(JSON.stringify(cfg));
     run = { cfg: runCfg, problem: toProblem(runCfg), steps: [], done: false, final: null, single: runMode === 'single' };
+    $('legLoop').hidden = run.single;  // the loop strategy only exists when runs go until the steps run out
     setMode('run');
     $('benchOut').hidden = true; $('benchBtn').disabled = false;
     buildScene(runCfg); placeScene(initialState(runCfg));
@@ -1448,7 +1449,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     const VH = Math.max(110, Math.min(166, Math.round(colH * 0.19)));
     const VW = Math.max(260, Math.round(svg.parentElement.clientWidth - 24)), L = 40, R = VW - 8, T = 10, B = VH - 20;
     svg.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
-    const maxR = Math.max(1, ...steps.map(s => Math.max(s.R, s.rR)));
+    const maxR = Math.max(1, ...steps.map(s => s.R));
     const ns = niceStep(maxR / 4), yMax = Math.ceil(maxR / ns) * ns;
     const X = i => L + (R - L) * i / Math.max(1, H - 1), Y = v => B - (B - T) * v / yMax;
     let s0 = null;
@@ -1465,7 +1466,6 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     for (let i = 0; i <= H; i += tickStep) { const t = mk('text', { x: X(Math.min(i, H - 1)), y: B + 16, 'text-anchor': 'middle', style: 'fill:var(--muted);font:11px var(--font-led)' }, svg); t.textContent = i; }
     steps.forEach((s, i) => { if (s.o.goal) mk('line', { x1: X(i), x2: X(i), y1: B - 7, y2: B, style: 'stroke:var(--ok);stroke-width:2' }, svg); });
     const path = key => steps.map((s, i) => (i ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(s[key]).toFixed(1)).join('');
-    mk('path', { d: path('rR'), style: 'fill:none;stroke:var(--muted);stroke-width:1.5;stroke-dasharray:4 3' }, svg);
     mk('path', { d: path('R'), style: 'fill:none;stroke:var(--led);stroke-width:2.2' }, svg);
     cx = { line: mk('line', { y1: T, y2: B, style: 'stroke:var(--ink);stroke-width:1.2' }, svg), X, L, R, H };
     drawLearning(H);

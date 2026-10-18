@@ -12,7 +12,7 @@ A browser lab where you build a building, hide how its world behaves, and watch 
    - the action it chose and whether it worked
    - its current strategy and the next steps of its A* plan
    - its estimate of every hidden number next to the true value, converging as it gathers data
-   - cumulative reward against a random policy on the same world and seed
+   - cumulative reward over the run (the random policy's score on the same world and seed is shown alongside)
    - a learning chart: how far its estimates are from the true values, step by step
 4. **Compare.** One click averages 10 runs of the controller against the random policy.
 
