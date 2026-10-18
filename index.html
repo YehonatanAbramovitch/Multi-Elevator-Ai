@@ -1,17 +1,17 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 </head>
 <body>
-<title>מוקד המעליות</title>
+<title>Elevator Dispatch Lab</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Karantina:wght@400;700&family=Rubik:wght@400;500;600&family=Share+Tech+Mono&display=swap">
 <style>
-/* Layout: lab bench. The right column holds the input (what the controller knows / what is hidden) and switches to the controller's mind during a run; the left column is the building cross-section with the reward timeline under it. */
+/* Layout: lab bench. The left column holds the input (what the controller knows / what is hidden) and switches to the controller's mind during a run; the right column is the building cross-section with the reward timeline under it. */
 :root {
   --bg: #e8edf1;
   --surface: #f7f9fb;
@@ -120,7 +120,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .hud { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .hud > div { flex: 1 1 130px; background: var(--surface); padding: 9px 13px; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
 .hud .k { font-size: 0.74rem; color: var(--muted); }
-.hud .v { font-family: var(--font-led); font-size: 1.45rem; line-height: 1.1; direction: ltr; text-align: right; font-variant-numeric: tabular-nums; }
+.hud .v { font-family: var(--font-led); font-size: 1.45rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .hud .v small { font-size: 0.82rem; color: var(--muted); }
 
 .scene { position: relative; background: var(--wall); border-radius: 14px; border: 1px solid var(--line); overflow: hidden; }
@@ -136,13 +136,13 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .stepno { font-family: var(--font-led); min-width: 86px; text-align: center; direction: ltr; }
 
 .act { font-size: 1.12rem; font-weight: 600; }
-.raw { font-family: var(--font-led); font-size: 0.8rem; color: var(--muted); direction: ltr; text-align: right; }
+.raw { font-family: var(--font-led); font-size: 0.8rem; color: var(--muted); }
 .pill { display: inline-flex; align-items: center; border-radius: 999px; padding: 2px 10px; font-size: 0.8rem; font-weight: 500; white-space: nowrap; }
 .pill.ok { background: var(--ok-soft); color: var(--ok); }
 .pill.bad { background: var(--signal-soft); color: var(--signal); }
 .pill.amber { background: var(--amber-soft); color: var(--led); }
 .pill.neutral { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
-.plan { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; direction: ltr; justify-content: flex-end; }
+.plan { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
 .plan span { font-family: var(--font-led); font-size: 0.74rem; padding: 2px 7px; border-radius: 5px; background: var(--bg); border: 1px solid var(--line); }
 .plan span:first-child { background: var(--amber-soft); color: var(--led); border-color: transparent; }
 .why { font-size: 0.84rem; color: var(--muted); margin: 6px 0 0; }
@@ -155,7 +155,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .bar { position: relative; height: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 4px; min-width: 60px; direction: ltr; }
 .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--led); transition: width .2s; }
 .bar b { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--hidden); }
-.num { font-family: var(--font-led); direction: ltr; text-align: right; white-space: nowrap; font-size: 0.78rem; }
+.num { font-family: var(--font-led); white-space: nowrap; font-size: 0.78rem; }
 .num small { color: var(--muted); }
 .legend { font-size: 0.74rem; color: var(--muted); margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
 .legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -164,7 +164,7 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 .chart svg { width: 100%; height: auto; display: block; direction: ltr; cursor: crosshair; }
 .log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 0.82rem; max-height: 190px; overflow: auto; }
 .log li { display: flex; gap: 8px; align-items: baseline; }
-.log .t { font-family: var(--font-led); color: var(--muted); font-size: 0.75rem; min-width: 34px; direction: ltr; text-align: right; }
+.log .t { font-family: var(--font-led); color: var(--muted); font-size: 0.75rem; min-width: 34px; }
 .log .r { margin-inline-start: auto; }
 .bench { font-size: 0.88rem; margin-top: 8px; }
 .foot { color: var(--muted); font-size: 0.8rem; }
@@ -183,119 +183,119 @@ h1 { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-h
 }
 </style>
 
-<div class="wrap" dir="rtl">
+<div class="wrap">
   <header>
     <div>
-      <h1>מוקד המעליות</h1>
-      <p class="tagline">מגדירים בניין ועולם, ואז הבקר מנסה להעביר בו את האנשים. הבקר לא רואה את אחוזי ההצלחה ואת התגמולים: הוא לומד אותם תוך כדי ריצה (למידה מחיזוקים) ומתכנן לפי מה שלמד.<br>זה האלגוריתם מהקובץ שיצרתי, מתורגם ל-JavaScript. התרגום נבדק מול קוד הפייתון ובוחר את אותן פעולות בדיוק.</p>
+      <h1>Elevator Dispatch Lab</h1>
+      <p class="tagline">Define a building and a world, then the controller tries to deliver the people in it. The controller can't see the success rates or the rewards: it learns them while it runs (reinforcement learning) and plans based on what it has learned.<br>This is the algorithm from the file I created, translated to JavaScript. The translation was checked against the Python code and picks exactly the same actions.</p>
     </div>
-    <div class="steps"><span id="stepEdit" class="on">1 · הקלט</span><span id="stepRun">2 · הבקר רץ</span></div>
+    <div class="steps"><span id="stepEdit" class="on">1 · Input</span><span id="stepRun">2 · Controller running</span></div>
   </header>
 
   <div class="main">
-    <!-- right column: editor / mind -->
+    <!-- left column: editor / mind -->
     <div class="col">
       <div id="editor" class="col">
         <div class="card">
-          <h3>נקודת התחלה</h3>
+          <h3>Starting point</h3>
           <div class="preset">
-            <div class="field"><label for="preset">בעיה מוכנה מתוך <span dir="ltr">ex3_check.py</span></label><select id="preset"></select></div>
-            <button class="btn" id="blank" type="button">בניין ריק</button>
+            <div class="field"><label for="preset">Ready-made problem from ex3_check.py</label><select id="preset"></select></div>
+            <button class="btn" id="blank" type="button">Empty building</button>
           </div>
           <p class="muted" id="presetNote" style="margin:8px 0 0"></p>
         </div>
 
         <div class="card">
-          <h3>הבניין <span class="tag known">הבקר יודע</span></h3>
+          <h3>The building <span class="tag known">Controller knows</span></h3>
           <div class="row">
-            <div class="field"><label for="fHeight">קומה עליונה</label><input id="fHeight" type="number" min="1" max="12"></div>
-            <div class="field"><label for="fHorizon">מספר צעדים</label><input id="fHorizon" type="number" min="10" max="1000"></div>
-            <div class="field"><label for="fGoal">בונוס סבב מלא</label><input id="fGoal" type="number" min="0" max="1000"></div>
+            <div class="field"><label for="fHeight">Top floor</label><input id="fHeight" type="number" min="1" max="12"></div>
+            <div class="field"><label for="fHorizon">Steps</label><input id="fHorizon" type="number" min="10" max="1000"></div>
+            <div class="field"><label for="fGoal">Full-round bonus</label><input id="fGoal" type="number" min="0" max="1000"></div>
             <div class="field"><label for="fSeed">seed</label><input id="fSeed" type="number" min="0" max="999999"></div>
           </div>
           <div id="elevList"></div>
-          <button class="btn small" id="addElev" type="button" style="margin-top:10px">+ מעלית</button>
+          <button class="btn small" id="addElev" type="button" style="margin-top:10px">+ Elevator</button>
           <div id="persList"></div>
-          <button class="btn small" id="addPers" type="button" style="margin-top:10px">+ אדם</button>
+          <button class="btn small" id="addPers" type="button" style="margin-top:10px">+ Person</button>
         </div>
 
         <div class="card hidden-world">
-          <h3>העולם המוסתר <span class="tag hide">הבקר לא רואה</span></h3>
-          <p class="muted" style="margin:0 0 4px">את אלה הבקר צריך ללמוד לבד. מעלית שנכשלת נוחתת בקומה אקראית, אדם שנכשל לא זז, ותגמול מוגרל מהרשימה בכל העברה.</p>
+          <h3>The hidden world <span class="tag hide">Controller can't see</span></h3>
+          <p class="muted" style="margin:0 0 4px">The controller has to learn these on its own. An elevator that fails lands on a random floor, a person who fails doesn't move, and each delivery pays a reward drawn at random from the list.</p>
           <div id="hiddenList"></div>
         </div>
 
         <div class="card">
-          <div class="field" style="margin-bottom:6px"><span>מתי הריצה נגמרת</span>
-            <div class="seg" id="modeSeg" role="group" aria-label="מתי הריצה נגמרת"><button type="button" data-m="single" aria-pressed="true">כשכולם הגיעו ליעד</button><button type="button" data-m="full" aria-pressed="false">כשנגמרים הצעדים</button></div>
+          <div class="field" style="margin-bottom:6px"><span>When the run ends</span>
+            <div class="seg" id="modeSeg" role="group" aria-label="When the run ends"><button type="button" data-m="single" aria-pressed="true">When everyone has arrived</button><button type="button" data-m="full" aria-pressed="false">When the steps run out</button></div>
           </div>
           <p class="muted" id="modeNote" style="margin:0 0 10px"></p>
           <ul class="issues" id="issues"></ul>
-          <button class="btn primary run" id="runBtn" type="button" style="margin-top:10px">הריצו את הבקר</button>
+          <button class="btn primary run" id="runBtn" type="button" style="margin-top:10px">Run the controller</button>
         </div>
       </div>
 
       <div id="mind" class="col" hidden>
         <div class="card">
           <div class="row" style="justify-content:space-between">
-            <button class="btn" id="backBtn" type="button">חזרה לעריכה</button>
-            <button class="btn" id="benchBtn" type="button">השוואה על 10 הרצות</button>
+            <button class="btn" id="backBtn" type="button">Back to editing</button>
+            <button class="btn" id="benchBtn" type="button">Compare over 10 runs</button>
           </div>
           <p class="bench" id="benchOut" hidden></p>
         </div>
         <div class="card">
-          <h3>הפעולה שהבקר בחר</h3>
+          <h3>The controller's action</h3>
           <div class="row"><span class="act" id="actHe">–</span><span class="pill" id="actOut"></span></div>
           <div class="raw" id="actRaw"></div>
           <p class="why" id="actWhy"></p>
         </div>
         <div class="card">
-          <h3>אסטרטגיה ותוכנית ה-A*</h3>
+          <h3>Strategy and A* plan</h3>
           <div class="row"><span class="pill" id="stratPill"></span><span id="stratText" class="muted"></span></div>
           <div class="plan" id="plan"></div>
         </div>
         <div class="card">
-          <h3>מה הבקר למד <span class="tag hide">מול הערך האמיתי</span></h3>
+          <h3>What the controller has learned <span class="tag hide">vs. the true value</span></h3>
           <table class="bel" id="bel"></table>
-          <div class="legend"><span><i class="sw"></i>אומדן הבקר</span><span><i class="sw" style="width:2px;height:12px;background:var(--hidden)"></i>ערך אמיתי, מוסתר מהבקר</span><span>n = ניסיונות או דגימות</span></div>
+          <div class="legend"><span><i class="sw"></i>Controller's estimate</span><span><i class="sw" style="width:2px;height:12px;background:var(--hidden)"></i>True value, hidden from the controller</span><span>n = attempts or samples</span></div>
         </div>
       </div>
     </div>
 
-    <!-- left column: building -->
+    <!-- right column: building -->
     <div class="col stage">
       <section class="hud">
-        <div><span class="k">תגמול הבקר שלך</span><span class="v" id="hR">0</span></div>
-        <div><span class="k">מדיניות אקראית, אותו צעד</span><span class="v" id="hRand">–</span></div>
-        <div><span class="k">צעד</span><span class="v" id="hStep">0</span></div>
-        <div><span class="k">הגיעו ליעד · סבבים</span><span class="v" id="hDel">0 · 0</span></div>
+        <div><span class="k">Your controller's reward</span><span class="v" id="hR">0</span></div>
+        <div><span class="k">Random policy, same step</span><span class="v" id="hRand">–</span></div>
+        <div><span class="k">Step</span><span class="v" id="hStep">0</span></div>
+        <div><span class="k">Delivered · rounds</span><span class="v" id="hDel">0 · 0</span></div>
       </section>
       <div class="scene" id="scene">
-        <svg id="svg" aria-label="חתך של הבניין"></svg>
+        <svg id="svg" aria-label="Building cross-section"></svg>
         <div class="banner" id="banner" style="opacity:0"></div>
-        <div class="edit-note" id="editNote">כך נראה הבניין במצב ההתחלתי. שינויים בקלט מתעדכנים כאן מיד.</div>
+        <div class="edit-note" id="editNote">This is the building's starting state. Changes to the input show up here right away.</div>
       </div>
-      <p class="muted" style="margin:0">מקרא: התווית <span dir="ltr" style="font-family:var(--font-led)">11→7</span> היא אדם מספר 11 שצריך להגיע לקומה 7 · המספר על הגוף הוא המשקל שלו · הדגלים הצבעוניים מסמנים את קומות היעד · מעלית מציגה עומס/קיבולת · פיר מקווקו הוא קומה שהמעלית לא מגיעה אליה.</p>
+      <p class="muted" style="margin:0">Legend: the label <span style="font-family:var(--font-led)">2→7</span> is person 2, who needs to get to floor 7 · the number on the body is their weight · colored flags mark destination floors · each elevator shows load/capacity · a crossed-out shaft is a floor that elevator can't reach.</p>
       <div class="controls" id="controls" hidden>
-        <button class="btn primary" id="play" type="button" style="min-width:80px">עצור</button>
+        <button class="btn primary" id="play" type="button" style="min-width:80px">Pause</button>
         <button class="btn" id="prev" type="button">‹</button>
         <button class="btn" id="next" type="button">›</button>
-        <select id="speed" aria-label="מהירות"><option value="2">מהירות איטית</option><option value="6" selected>מהירות בינונית</option><option value="20">מהירות גבוהה</option></select>
-        <input type="range" id="scrub" min="0" max="0" value="0" dir="ltr" aria-label="ציר זמן">
+        <select id="speed" aria-label="Speed"><option value="2">Slow speed</option><option value="6" selected>Medium speed</option><option value="20">Fast speed</option></select>
+        <input type="range" id="scrub" min="0" max="0" value="0" dir="ltr" aria-label="Timeline">
         <span class="stepno" id="stepno"></span>
       </div>
       <div class="card chart" id="chartCard" hidden>
-        <h3>תגמול מצטבר · לחיצה קופצת לצעד</h3>
-        <svg id="chart" viewBox="0 0 640 190" aria-label="גרף תגמול מצטבר"></svg>
-        <div class="legend"><span><i class="sw"></i>הבקר שלך</span><span><i class="sw" style="background:var(--muted)"></i>מדיניות אקראית</span><span><i class="sw" style="background:var(--amber-soft)"></i>תקופות loop</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>סבב מלא</span></div>
+        <h3>Cumulative reward · click to jump to a step</h3>
+        <svg id="chart" viewBox="0 0 640 190" aria-label="Cumulative reward chart"></svg>
+        <div class="legend"><span><i class="sw"></i>Your controller</span><span><i class="sw" style="background:var(--muted)"></i>Random policy</span><span><i class="sw" style="background:var(--amber-soft)"></i>Loop periods</span><span><i class="sw" style="background:var(--ok);width:3px;height:10px"></i>Full round</span></div>
       </div>
       <div class="card" id="logCard" hidden>
-        <h3>יומן</h3>
+        <h3>Log</h3>
         <ul class="log" id="log"></ul>
       </div>
     </div>
   </div>
-  <p class="foot">חוקי העולם זהים למנוע של המטלה (<span dir="ltr">ext_elev.py</span>). כל פעולה, כולל RESET, עולה צעד אחד. "מדיניות אקראית" היא ה-baseline של הקורס: בחירה אחידה מבין הפעולות החוקיות, באותו עולם ובאותו seed.</p>
+  <p class="foot">The world's rules match the assignment's engine (ext_elev.py). Every action, RESET included, costs one step. "Random policy" is the course baseline: a uniform choice among the legal actions, in the same world and with the same seed.</p>
 </div>
 
 <script id="core">// JavaScript port of Ex3/ex3_solution.py (Controller) plus a copy of the
@@ -836,7 +836,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
   const $ = id => document.getElementById(id);
   const mk = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const a in attrs) n.setAttribute(a, attrs[a]); if (parent) parent.appendChild(n); return n; };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const DIFF = { easy: 'קל', med: 'בינוני', hard: 'קשה' };
+  const DIFF = { easy: 'Easy', med: 'Medium', hard: 'Hard' };
 
   // ================= configuration (the input) =================
   let cfg = null;
@@ -871,7 +871,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
       PRESETS.filter(P => P.name.endsWith('_' + d)).forEach(P => { const o = document.createElement('option'); o.value = P.name; o.textContent = P.name; g.appendChild(o); });
       sel.appendChild(g);
     }
-    const o = document.createElement('option'); o.value = ''; o.textContent = 'מותאם אישית'; sel.appendChild(o);
+    const o = document.createElement('option'); o.value = ''; o.textContent = 'Custom'; sel.appendChild(o);
   })();
   $('preset').addEventListener('change', e => { const P = PRESETS.find(x => x.name === e.target.value); if (P) { cfg = fromPreset(P); renderEditor(); } });
   $('blank').addEventListener('click', () => { cfg = blank(); renderEditor(); });
@@ -884,44 +884,44 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     $('fHeight').value = cfg.height; $('fHorizon').value = cfg.horizon; $('fGoal').value = cfg.goal; $('fSeed').value = cfg.seed;
     $('preset').value = cfg.name || '';
     $('presetNote').textContent = cfg.name && AIFINAL[cfg.name] != null && runMode === 'full'
-      ? `בבנצ'מרק בפייתון (30 הרצות, עד שנגמרים הצעדים) הבקר צבר כאן בממוצע ${Math.round(AIFINAL[cfg.name])}.` : (cfg.name ? `בעיה ${cfg.name} מתוך המטלה.` : 'בניין שהגדרתם בעצמכם.');
+      ? `In the Python benchmark (30 runs, until the steps run out) the controller averaged ${Math.round(AIFINAL[cfg.name])} here.` : (cfg.name ? `Problem ${cfg.name} from the assignment.` : 'A building you defined yourself.');
     const eids = eidsOf(cfg), pids = pidsOf(cfg);
     let h = '';
     eids.forEach((e, i) => {
       const E = cfg.E[e];
       let chips = '';
-      for (let f = 0; f <= cfg.height; f++) chips += `<button type="button" class="chip" data-e="${e}" data-f="${f}" aria-pressed="${E.reach.includes(f)}" aria-label="מעלית ${e} מגיעה לקומה ${f}">${f}</button>`;
-      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>מעלית ${e}
-          <button type="button" class="btn small x" data-del-e="${e}" ${eids.length < 2 ? 'disabled' : ''}>הסרה</button></div>
+      for (let f = 0; f <= cfg.height; f++) chips += `<button type="button" class="chip" data-e="${e}" data-f="${f}" aria-pressed="${E.reach.includes(f)}" aria-label="Elevator ${e} reaches floor ${f}">${f}</button>`;
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>Elevator ${e}
+          <button type="button" class="btn small x" data-del-e="${e}" ${eids.length < 2 ? 'disabled' : ''}>Remove</button></div>
         <div class="row">
-          <div class="field"><label for="es-${e}">קומת התחלה</label><select id="es-${e}" data-e-start="${e}">${floorOptions(E.start)}</select></div>
-          <div class="field"><label for="ec-${e}">קיבולת (ק״ג)</label><input id="ec-${e}" type="number" min="1" max="100" value="${E.cap}" data-e-cap="${e}"></div>
+          <div class="field"><label for="es-${e}">Start floor</label><select id="es-${e}" data-e-start="${e}">${floorOptions(E.start)}</select></div>
+          <div class="field"><label for="ec-${e}">Capacity</label><input id="ec-${e}" type="number" min="1" max="100" value="${E.cap}" data-e-cap="${e}"></div>
         </div>
-        <div class="field">קומות שהמעלית מגיעה אליהן<div class="chips">${chips}</div></div></div>`;
+        <div class="field">Floors it reaches<div class="chips">${chips}</div></div></div>`;
     });
     $('elevList').innerHTML = h;
     h = '';
     pids.forEach((p, i) => {
       const P = cfg.P[p];
-      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>אדם ${p}
-          <button type="button" class="btn small x" data-del-p="${p}" ${pids.length < 2 ? 'disabled' : ''}>הסרה</button></div>
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>Person ${p}
+          <button type="button" class="btn small x" data-del-p="${p}" ${pids.length < 2 ? 'disabled' : ''}>Remove</button></div>
         <div class="row">
-          <div class="field"><label for="ps-${p}">קומת התחלה</label><select id="ps-${p}" data-p-start="${p}">${floorOptions(P.start)}</select></div>
-          <div class="field"><label for="pg-${p}">קומת יעד</label><select id="pg-${p}" data-p-goal="${p}">${floorOptions(P.goal)}</select></div>
-          <div class="field"><label for="pw-${p}">משקל</label><input id="pw-${p}" type="number" min="1" max="100" value="${P.w}" data-p-w="${p}"></div>
+          <div class="field"><label for="ps-${p}">Start floor</label><select id="ps-${p}" data-p-start="${p}">${floorOptions(P.start)}</select></div>
+          <div class="field"><label for="pg-${p}">Destination</label><select id="pg-${p}" data-p-goal="${p}">${floorOptions(P.goal)}</select></div>
+          <div class="field"><label for="pw-${p}">Weight</label><input id="pw-${p}" type="number" min="1" max="100" value="${P.w}" data-p-w="${p}"></div>
         </div></div>`;
     });
     $('persList').innerHTML = h;
     h = '';
     eids.forEach((e, i) => {
-      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>מעלית ${e}</div>
-        <div class="prob"><label for="ep-${e}" class="muted" style="min-width:96px">הצלחת תנועה</label><input id="ep-${e}" type="range" min="0.05" max="1" step="0.05" value="${cfg.E[e].p}" data-e-p="${e}"><output>${Math.round(cfg.E[e].p * 100)}%</output></div></div>`;
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${ECOL[i % 4]}"></i>Elevator ${e}</div>
+        <div class="prob"><label for="ep-${e}" class="muted" style="min-width:96px">Move success</label><input id="ep-${e}" type="range" min="0.05" max="1" step="0.05" value="${cfg.E[e].p}" data-e-p="${e}"><output>${Math.round(cfg.E[e].p * 100)}%</output></div></div>`;
     });
     pids.forEach((p, i) => {
       const P = cfg.P[p];
-      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>אדם ${p}</div>
-        <div class="prob"><label for="pp-${p}" class="muted" style="min-width:96px">הצלחת כניסה/יציאה</label><input id="pp-${p}" type="range" min="0.05" max="1" step="0.05" value="${P.p}" data-p-p="${p}"><output>${Math.round(P.p * 100)}%</output></div>
-        <div class="field"><label for="pr-${p}">תגמולים אפשריים (מופרדים בפסיק)</label><input id="pr-${p}" type="text" value="${P.rw.join(', ')}" data-p-rw="${p}"></div></div>`;
+      h += `<div class="item"><div class="item-head"><i class="dot" style="background:${PCOL[i % 6]}"></i>Person ${p}</div>
+        <div class="prob"><label for="pp-${p}" class="muted" style="min-width:96px">Board/exit success</label><input id="pp-${p}" type="range" min="0.05" max="1" step="0.05" value="${P.p}" data-p-p="${p}"><output>${Math.round(P.p * 100)}%</output></div>
+        <div class="field"><label for="pr-${p}">Possible rewards (comma-separated)</label><input id="pr-${p}" type="text" value="${P.rw.join(', ')}" data-p-rw="${p}"></div></div>`;
     });
     $('hiddenList').innerHTML = h;
     $('addElev').disabled = eids.length >= 4;
@@ -989,13 +989,13 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     }
     for (const p of pids) {
       const P = cfg.P[p];
-      if (P.start === P.goal) errs.push(`אדם ${p}: קומת ההתחלה וקומת היעד זהות.`);
-      if (!P.rw.length || P.rw.some(x => !(x > 0) || !isFinite(x))) errs.push(`אדם ${p}: התגמולים חייבים להיות מספרים חיוביים.`);
+      if (P.start === P.goal) errs.push(`Person ${p}: the start floor and the destination are the same.`);
+      if (!P.rw.length || P.rw.some(x => !(x > 0) || !isFinite(x))) errs.push(`Person ${p}: rewards must be positive numbers.`);
       const ok = eids.some(e => cfg.E[e].reach.includes(P.start) && ecr[e].has(P.goal) && cfg.E[e].cap >= P.w);
-      if (!ok) warns.push(`אדם ${p} לא יכול להגיע מקומה ${P.start} לקומה ${P.goal} בשום מסלול, אז אף סבב מלא לא יושלם.`);
-      if (eids.every(e => cfg.E[e].cap < P.w)) warns.push(`אדם ${p} כבד מכל המעליות.`);
+      if (!ok) warns.push(`Person ${p} has no route from floor ${P.start} to floor ${P.goal}, so no full round can be completed.`);
+      if (eids.every(e => cfg.E[e].cap < P.w)) warns.push(`Person ${p} is heavier than every elevator's capacity.`);
     }
-    if (pids.length >= 5) warns.push('עם 5–6 אנשים החיפוש כבד יותר, והריצה עלולה להיות איטית.');
+    if (pids.length >= 5) warns.push('With 5–6 people the search is heavier and the run may be slow.');
     return { errs, warns };
   }
 
@@ -1003,7 +1003,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
   function refreshAfterEdit(full) {
     lastIssues = validate();
     $('issues').innerHTML = lastIssues.errs.map(t => `<li class="err">${esc(t)}</li>`).join('') + lastIssues.warns.map(t => `<li class="warn">${esc(t)}</li>`).join('')
-      || '<li class="warn">הקלט תקין. אפשר להריץ.</li>';
+      || '<li class="warn">The input is valid and ready to run.</li>';
     $('runBtn').disabled = lastIssues.errs.length > 0;
     drawInitial();
   }
@@ -1052,7 +1052,7 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
       const cable = mk('line', { x1: x + shaftW / 2, x2: x + shaftW / 2, y1: top - 6, y2: top, style: 'stroke:var(--slab);stroke-width:2' }, svg);
       mk('rect', { x: x + 12, y: 8, width: shaftW - 24, height: 34, rx: 5, style: 'fill:var(--led-bg)' }, svg);
       const led = mk('text', { x: x + shaftW / 2, y: 34, 'text-anchor': 'middle', style: 'fill:var(--led);font:24px var(--font-led)' }, svg);
-      const lbl = mk('text', { x: x + shaftW / 2, y: 58, 'text-anchor': 'middle', style: `fill:${col};font:600 13px var(--font-body)` }, svg); lbl.textContent = `מעלית ${e}`;
+      const lbl = mk('text', { x: x + shaftW / 2, y: 58, 'text-anchor': 'middle', style: `fill:${col};font:600 13px var(--font-body)` }, svg); lbl.textContent = `Elevator ${e}`;
       const car = mk('g', { class: 'car' }, svg);
       mk('rect', { class: 'cab', x: x + 6, y: 5, width: shaftW - 12, height: rowH - 16, rx: 4, style: 'fill:var(--surface)' }, car);
       mk('rect', { class: 'door l', x: x + 8, y: 7, width: shaftW / 2 - 8, height: rowH - 20, style: `fill:${col};opacity:.3` }, car);
@@ -1198,9 +1198,9 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     $('benchOut').hidden = true; $('benchBtn').disabled = false;
     buildScene(runCfg); placeScene(initialState(runCfg));
     buildBeliefs(); k = 0; $('scrub').max = 0;
-    banner('הבקר מתחיל בלי לדעת כלום על העולם', '');
+    banner('The controller starts out knowing nothing about the world', '');
     try { makeWorker(); worker.postMessage({ cmd: 'run', problem: run.problem, seed: runCfg.seed, single: run.single }); }
-    catch (err) { banner('הדפדפן לא מאפשר להריץ את החישוב ברקע', 'bad'); return; }
+    catch (err) { banner('This browser doesn\'t allow running the simulation in the background', 'bad'); return; }
     play();
   }
 
@@ -1209,19 +1209,19 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     if (!run) return;
     if (m.type === 'chunk') { run.steps.push(...m.steps); $('scrub').max = Math.max(0, run.steps.length - 1); drawChart(); if (!playing && run.steps.length === m.steps.length) show(0); }
     else if (m.type === 'done') { run.done = true; run.final = m.final; run.total = m.total; run.rand = m.rand; run.finishedAt = m.finishedAt; run.randFinishedAt = m.randFinishedAt; drawChart(); updateStepNo(); }
-    else if (m.type === 'benchProgress') { $('benchOut').hidden = false; $('benchOut').textContent = `מריץ… ${m.i}/10`; }
+    else if (m.type === 'benchProgress') { $('benchOut').hidden = false; $('benchOut').textContent = `Running… ${m.i}/10`; }
     else if (m.type === 'bench') {
-      const ratio = m.rand > 0 ? `, פי ${(m.ai / m.rand).toFixed(m.ai / m.rand >= 10 ? 0 : 1)}` : '';
+      const ratio = m.rand > 0 ? `, ${(m.ai / m.rand).toFixed(m.ai / m.rand >= 10 ? 0 : 1)}× as much` : '';
       $('benchOut').hidden = false;
       $('benchOut').innerHTML = m.single
-        ? `על 10 seeds: <b>הבקר שלך סיים ב-${m.fin}/10</b>${m.fin ? `, בממוצע אחרי ${Math.round(m.finAvg)} צעדים` : ''}. מדיניות אקראית סיימה ב-${m.rfin}/10${m.rfin ? `, בממוצע אחרי ${Math.round(m.rfinAvg)} צעדים` : ` תוך ${run.cfg.horizon} צעדים`}.`
-        : `ממוצע על 10 seeds: <b>הבקר שלך ${Math.round(m.ai)}</b> מול מדיניות אקראית ${Math.round(m.rand)}${ratio}.`;
+        ? `Over 10 seeds: <b>your controller finished ${m.fin}/10</b>${m.fin ? `, after ${Math.round(m.finAvg)} steps on average` : ''}. The random policy finished ${m.rfin}/10${m.rfin ? `, after ${Math.round(m.rfinAvg)} steps on average` : ` within ${run.cfg.horizon} steps`}.`
+        : `Average over 10 seeds: <b>your controller ${Math.round(m.ai)}</b> vs. random policy ${Math.round(m.rand)}${ratio}.`;
       $('benchBtn').disabled = false;
-    } else if (m.type === 'error') banner('שגיאה בריצה: ' + m.msg, 'bad');
+    } else if (m.type === 'error') banner('Run error: ' + m.msg, 'bad');
   }
   $('benchBtn').addEventListener('click', () => {
     if (!run) return;
-    $('benchBtn').disabled = true; $('benchOut').hidden = false; $('benchOut').textContent = 'מריץ… 0/10';
+    $('benchBtn').disabled = true; $('benchOut').hidden = false; $('benchOut').textContent = 'Running… 0/10';
     const w = new Worker(URL.createObjectURL(new Blob([$('core').textContent + '\n' + WORKER_MAIN], { type: 'text/javascript' })));
     w.onmessage = ev => { onWorker(ev); if (ev.data.type === 'bench' || ev.data.type === 'error') w.terminate(); };
     w.postMessage({ cmd: 'bench', problem: run.problem, seed: run.cfg.seed, single: run.single });
@@ -1229,12 +1229,12 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
 
   function speed() { return +$('speed').value; }
   function play() {
-    playing = true; $('play').textContent = 'עצור';
+    playing = true; $('play').textContent = 'Pause';
     document.documentElement.style.setProperty('--dur', Math.min(300, Math.round(900 / speed())) + 'ms');
     clearInterval(timer);
     timer = setInterval(tick, 1000 / speed());
   }
-  function stop() { playing = false; $('play').textContent = 'נגן'; clearInterval(timer); timer = null; }
+  function stop() { playing = false; $('play').textContent = 'Play'; clearInterval(timer); timer = null; }
   function tick() {
     if (!run) return stop();
     if (k < run.steps.length - 1) show(k + 1);
@@ -1269,10 +1269,10 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     $('hStep').innerHTML = `${run.steps.length}<small>/${run.cfg.horizon}</small>`;
     $('hDel').textContent = `${last.d} · ${last.rd}`;
     if (run.single) {
-      const rnd = run.randFinishedAt ? `מדיניות אקראית סיימה אחרי ${run.randFinishedAt}` : `מדיניות אקראית לא סיימה ב-${run.cfg.horizon} צעדים`;
-      banner(run.finishedAt ? `כולם הגיעו אחרי ${run.finishedAt} צעדים · ${rnd}` : `נגמרו הצעדים לפני שכולם הגיעו · ${rnd}`, run.finishedAt ? 'good' : 'bad');
+      const rnd = run.randFinishedAt ? `random policy finished after ${run.randFinishedAt}` : `random policy didn't finish in ${run.cfg.horizon} steps`;
+      banner(run.finishedAt ? `Everyone arrived after ${run.finishedAt} steps · ${rnd}` : `The steps ran out before everyone arrived · ${rnd}`, run.finishedAt ? 'good' : 'bad');
       clearTimeout(bannerT);
-    } else banner(`הריצה הסתיימה: ${Math.round(run.total)} מול ${Math.round(run.rand)} של מדיניות אקראית`, 'good');
+    } else banner(`Run finished: ${Math.round(run.total)} vs. ${Math.round(run.rand)} for the random policy`, 'good');
   }
   function effectsFor(st) {
     if (!st) return;
@@ -1280,16 +1280,16 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     if (o.kind === 'move' && !o.ok) {
       const m = st.a.match(/\{(-?\d+),/), c = nodes.cars[+m[1]];
       if (c) { c.g.classList.remove('flash'); void c.g.getBBox(); c.g.classList.add('flash'); }
-      banner(o.landed === o.from ? `מעלית ${m[1]} נתקעה במקום` : `מעלית ${m[1]} נחתה בקומה ${o.landed} במקום ${o.to}`, 'bad');
+      banner(o.landed === o.from ? `Elevator ${m[1]} got stuck in place` : `Elevator ${m[1]} landed on floor ${o.landed} instead of ${o.to}`, 'bad');
     } else if (o.kind === 'enter' || o.kind === 'exit') {
       const e = +st.a.match(/,(-?\d+)\}/)[1], c = nodes.cars[e];
       if (c && o.ok) { c.g.classList.add('open'); setTimeout(() => c.g.classList.remove('open'), 380); }
       if (o.delivered) {
         const t = mk('text', { class: 'float', x: geo.labelW + geo.lobbyW - 60, y: geo.yOf(o.floor) + 30, 'text-anchor': 'middle' }, nodes.fx);
         t.textContent = '+' + o.r; setTimeout(() => t.remove(), 1200);
-        if (o.goal) banner(`סבב מלא! +${run.cfg.goal} בונוס, והבניין חוזר להתחלה`, 'good');
-      } else if (!o.ok) banner(o.kind === 'enter' ? 'האדם לא נכנס, הבקר ינסה שוב' : 'האדם לא יצא, הבקר ינסה שוב', 'bad');
-    } else if (o.kind === 'reset') banner('RESET: חזרה למצב ההתחלתי', '');
+        if (o.goal) banner(`Full round! +${run.cfg.goal} bonus, and the building resets`, 'good');
+      } else if (!o.ok) banner(o.kind === 'enter' ? 'The person didn\'t board, the controller will try again' : 'The person didn\'t exit, the controller will try again', 'bad');
+    } else if (o.kind === 'reset') banner('RESET: back to the starting state', '');
   }
 
   function updateHud(i) {
@@ -1302,53 +1302,53 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
   function updateStepNo() {
     if (!run) return;
     const n = run.steps.length, tot = run.cfg.horizon;
-    $('stepno').textContent = run.done ? `${shownFinal ? n : k + 1}/${n}` : `${k + 1}/${n} · מחשב ${Math.round(n / tot * 100)}%`;
+    $('stepno').textContent = run.done ? `${shownFinal ? n : k + 1}/${n}` : `${k + 1}/${n} · computing ${Math.round(n / tot * 100)}%`;
   }
 
   // ---------- mind panel ----------
   function actionHe(a) {
-    if (a === 'RESET') return 'איפוס להתחלה';
+    if (a === 'RESET') return 'Reset to the start';
     const m = a.match(/\{(-?\d+),(-?\d+)\}/), x = m[1], y = m[2];
-    if (a.startsWith('MOVE')) return `מעלית ${x} לקומה ${y}`;
-    if (a.startsWith('ENTER')) return `אדם ${x} נכנס למעלית ${y}`;
-    return `אדם ${x} יוצא ממעלית ${y}`;
+    if (a.startsWith('MOVE')) return `Elevator ${x} to floor ${y}`;
+    if (a.startsWith('ENTER')) return `Person ${x} boards elevator ${y}`;
+    return `Person ${x} exits elevator ${y}`;
   }
   function placeMind(i) {
     const st = run.steps[i], o = st.o;
     $('actHe').textContent = actionHe(st.a); $('actRaw').textContent = st.a;
     const pill = $('actOut');
-    if (o.kind === 'reset') { pill.className = 'pill amber'; pill.textContent = 'איפוס'; }
-    else if (o.delivered) { pill.className = 'pill ok'; pill.textContent = `הגיע ליעד · +${o.r}`; }
-    else if (o.ok) { pill.className = 'pill ok'; pill.textContent = 'יצליח'; }
-    else { pill.className = 'pill bad'; pill.textContent = 'ייכשל'; }
+    if (o.kind === 'reset') { pill.className = 'pill amber'; pill.textContent = 'Reset'; }
+    else if (o.delivered) { pill.className = 'pill ok'; pill.textContent = `Delivered · +${o.r}`; }
+    else if (o.ok) { pill.className = 'pill ok'; pill.textContent = 'Will succeed'; }
+    else { pill.className = 'pill bad'; pill.textContent = 'Will fail'; }
     let why = '';
-    if (st.a === 'RESET' && st.st === 'loop') why = `באסטרטגיית loop הבקר מאפס כדי להתחיל שוב מהמצב ההתחלתי ולהעביר את אדם ${st.lp}.`;
-    else if (st.rp) why = 'המציאות לא תאמה את התוכנית (או שהגיע זמן רענון), אז הבקר תכנן מסלול חדש לפי מה שלמד עד עכשיו.';
-    else why = 'הבקר ממשיך בתוכנית הקיימת, כי המצב תואם את מה שציפה לו.';
+    if (st.a === 'RESET' && st.st === 'loop') why = `In the loop strategy the controller resets to start over from the initial state and deliver person ${st.lp} again.`;
+    else if (st.rp) why = 'Reality didn\'t match the plan (or a refresh was due), so the controller planned a new route from what it has learned so far.';
+    else why = 'The controller keeps following its current plan, because the state matches what it expected.';
     $('actWhy').textContent = why;
     const sp = $('stratPill'), stx = $('stratText');
-    if (st.st === 'loop') { sp.className = 'pill amber'; sp.textContent = 'loop'; stx.textContent = `משתלם יותר להעביר רק את אדם ${st.lp} שוב ושוב`; }
-    else { sp.className = 'pill neutral'; sp.textContent = 'full'; stx.textContent = 'מעבירים את כולם בשביל הבונוס'; }
+    if (st.st === 'loop') { sp.className = 'pill amber'; sp.textContent = 'loop'; stx.textContent = `Delivering only person ${st.lp}, over and over, pays more`; }
+    else { sp.className = 'pill neutral'; sp.textContent = 'full'; stx.textContent = 'Deliver everyone for the bonus'; }
     const plan = $('plan'); plan.innerHTML = '';
     const list = st.a === 'RESET' ? [] : [st.a].concat(st.plan);
     list.slice(0, 6).forEach(a => { const s = document.createElement('span'); s.textContent = a; plan.appendChild(s); });
-    if (!list.length) plan.innerHTML = '<span class="muted" style="background:none;border:0">אין תוכנית פעילה</span>';
+    if (!list.length) plan.innerHTML = '<span class="muted" style="background:none;border:0">No active plan</span>';
     placeBeliefs(st.b);
   }
   let rwMax = 1;
   function buildBeliefs() {
     const c = run.cfg, eids = eidsOf(c), pids = pidsOf(c);
     rwMax = Math.max(1, c.goal, ...pids.flatMap(p => c.P[p].rw));
-    let h = '<thead><tr><th>מי</th><th>מה נמדד</th><th style="width:36%">אומדן מול אמת</th><th>ערך</th></tr></thead><tbody>';
+    let h = '<thead><tr><th>Who</th><th>Measured</th><th style="width:36%">Estimate vs. truth</th><th>Value</th></tr></thead><tbody>';
     eids.forEach((e, i) => {
-      h += `<tr><td><span class="who"><i class="dot" style="background:${ECOL[i % 4]}"></i>E${e}</span></td><td>תנועה</td>
+      h += `<tr><td><span class="who"><i class="dot" style="background:${ECOL[i % 4]}"></i>E${e}</span></td><td>Move</td>
         <td><div class="bar"><i id="be-${e}"></i><b style="left:${c.E[e].p * 100}%"></b></div></td><td class="num" id="bn-e${e}"></td></tr>`;
     });
     pids.forEach((p, i) => {
       const mean = c.P[p].rw.reduce((a, b) => a + b, 0) / c.P[p].rw.length;
-      h += `<tr><td rowspan="2"><span class="who"><i class="dot" style="background:${PCOL[i % 6]}"></i>${p}</span></td><td>כניסה/יציאה</td>
+      h += `<tr><td rowspan="2"><span class="who"><i class="dot" style="background:${PCOL[i % 6]}"></i>${p}</span></td><td>Board/exit</td>
         <td><div class="bar"><i id="bp-${p}"></i><b style="left:${c.P[p].p * 100}%"></b></div></td><td class="num" id="bn-p${p}"></td></tr>
-        <tr><td>תגמול</td><td><div class="bar"><i id="br-${p}"></i><b style="left:${Math.min(100, mean / rwMax * 100)}%"></b></div></td><td class="num" id="bn-r${p}" data-t="${mean.toFixed(1)}"></td></tr>`;
+        <tr><td>Reward</td><td><div class="bar"><i id="br-${p}"></i><b style="left:${Math.min(100, mean / rwMax * 100)}%"></b></div></td><td class="num" id="bn-r${p}" data-t="${mean.toFixed(1)}"></td></tr>`;
     });
     $('bel').innerHTML = h + '</tbody>';
   }
@@ -1406,10 +1406,10 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
     for (let j = Math.max(0, i - 9); j < i; j++) {
       const s = run.steps[j], o = s.o;
       const cls = o.kind === 'reset' ? 'amber' : o.ok ? 'ok' : 'bad';
-      const txt = o.kind === 'reset' ? 'איפוס' : o.delivered ? `+${o.r}` : o.ok ? 'הצליח' : (o.kind === 'move' ? `נחתה ב-${o.landed}` : 'נכשל');
+      const txt = o.kind === 'reset' ? 'Reset' : o.delivered ? `+${o.r}` : o.ok ? 'Succeeded' : (o.kind === 'move' ? `Landed on ${o.landed}` : 'Failed');
       h = `<li><span class="t">#${j + 1}</span><span>${actionHe(s.a)}</span><span class="r"><span class="pill ${cls}">${txt}</span></span></li>` + h;
     }
-    $('log').innerHTML = h || '<li class="muted">עוד לא בוצעו פעולות.</li>';
+    $('log').innerHTML = h || '<li class="muted">No actions yet.</li>';
   }
 
   let bannerT = null;
@@ -1431,8 +1431,8 @@ if (typeof module !== 'undefined') module.exports = { Engine, Controller, mulber
   function syncMode() {
     document.querySelectorAll('#modeSeg button').forEach(b => b.setAttribute('aria-pressed', b.dataset.m === runMode));
     $('modeNote').textContent = runMode === 'single'
-      ? 'הריצה עוצרת ברגע שכולם הגיעו ליעד. במצב הזה הבקר לא משתמש באסטרטגיית loop ולא מאפס, כי בסבב אחד אין לזה טעם. כל השאר זהה לאלגוריתם.'
-      : 'אחרי שכולם הגיעו הבניין מתאפס והבקר ממשיך לצבור תגמול עד שנגמרים הצעדים, כולל אסטרטגיית loop. זה האלגוריתם בדיוק כפי שנכתב.';
+      ? 'The run stops as soon as everyone has reached their floor. In this mode the controller doesn\'t use the loop strategy or reset, since a single round leaves no point to it. Everything else is the same algorithm.'
+      : 'After everyone arrives the building resets and the controller keeps collecting reward until the steps run out, loop strategy included. This is the algorithm exactly as written.';
     if (cfg) renderEditor();
   }
   $('modeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; runMode = b.dataset.m; syncMode(); });

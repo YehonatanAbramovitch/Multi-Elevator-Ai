@@ -2,7 +2,7 @@
 
 **Live demo: https://yehonatanabramovitch.github.io/Multi-Elevator-Ai/**
 
-A browser lab where you build a building, hide how its world behaves, and watch a reinforcement-learning controller figure it out while it delivers people to their floors. The interface is in Hebrew.
+A browser lab where you build a building, hide how its world behaves, and watch a reinforcement-learning controller figure it out while it delivers people to their floors.
 
 ## What you can do
 

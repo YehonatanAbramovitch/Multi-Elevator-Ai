@@ -14,7 +14,7 @@ for name, text in (("core.js", core), ("problems.json", problems)):
     assert "</script" not in text.lower(), f"{name} must not contain </script"
 
 page = template.replace("__CORE__", core).replace("__PROBLEMS__", problems).replace("__AIFINAL__", ai_final)
-head = ('<!doctype html>\n<html lang="he" dir="rtl">\n<head>\n<meta charset="utf-8">\n'
+head = ('<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n</head>\n<body>\n')
 (root / "index.html").write_text(head + page + "\n</body>\n</html>\n", encoding="utf-8")
 print("wrote index.html")
